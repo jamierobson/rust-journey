@@ -1,37 +1,72 @@
-mod hello_world;
 mod sudoku;
+use sudoku::domain::{cell::Cell, cell_grid::CellGrid, consts::{self, PUZZLE_DIMENTION}};
+
+mod hello_world;
 
 fn main() {
     hello_world::greeter::say_hello();
-    let mut cell = sudoku::domain::cell::Cell::new();
+    let mut cell_grid = sudoku::domain::cell_grid::CellGrid::new();
 
-    write_all_elements_to_console("new cell all candidates", &cell.candidates);
-    write_all_elements_to_console("new cell all discounted", &cell.discounted_values);
-    write_cell_value("created", &cell.value);
+    // We've implemented index and indexmut so that we can index into the grid and keep the grid structure itself private
+    // todo: I might still prefer to enforce something like get_value and set_value on the grid type itself, 
+    // so that it and only it interfaces with the underlying data structure.
+    // For now, I think this is ok enough to proceed
+    cell_grid[2][1].set_value(9);
+    cell_grid[6][6].set_value(6);
+    cell_grid[0][0].set_value(20); // Out of range, so this is an issue
 
-    cell.add_candidate(3);
-    cell.add_candidate(3);
-    cell.discount_value(6);
+    print!("Ok let's try drawing the whole grid! \n");
+    draw_full_grid(&cell_grid);
 
-    write_all_elements_to_console("add 3 discount 6 remaining candidates", &cell.candidates);
-    write_all_elements_to_console("add 3 discount 6 remaining discounted", &cell.discounted_values);
-    
-    cell.set_value(4);
-    write_all_elements_to_console("add 3 and 4, discount 6 remaining candidates", &cell.candidates);
-    write_all_elements_to_console("add 3 and 4, discount 6 remaining discounted", &cell.discounted_values);
-    write_cell_value("set value = 4", &cell.value);
+
 }
 
-fn write_cell_value(after_operation: &str, value: &Option<u8>) {
-    let value_to_display = match value {
-        None => "not set".into(),
+fn draw_full_grid(cell_grid: &CellGrid){
+
+    let separator_line_length = create_row_line(&cell_grid[0]).len();
+
+    draw_separator_line(separator_line_length);
+    for i in 0..consts::PUZZLE_DIMENTION as usize {
+        draw_row(&cell_grid[i]);
+        draw_separator_line(separator_line_length);     
+        if include_extra_separator(i.try_into().unwrap(), consts::PUZZLE_SUB_GRID_HEIGHT) {
+            draw_separator_line(separator_line_length);     
+        }
+    }
+}
+
+fn draw_row(row: &[Cell; consts::PUZZLE_DIMENTION as usize]) {
+    print!("{}\n", create_row_line(row));
+}
+
+fn create_row_line(row: &[Cell; consts::PUZZLE_DIMENTION as usize]) -> String {
+
+    let mut row_line_display: String = "|".to_owned();
+
+    for i in 0..consts::PUZZLE_DIMENTION as usize {
+        row_line_display.push(' ');
+        row_line_display.push_str(value_or_letter_x(&row[i].value).as_str());
+        row_line_display.push_str(" |");
+     
+        if include_extra_separator(i.try_into().unwrap(), consts::PUZZLE_SUB_GRID_WIDTH) {
+            row_line_display.push('|');
+        }
+    }
+
+    return row_line_display;
+}
+
+fn include_extra_separator(index: u8, if_divisible_by: u8) -> bool{
+    return (1 + index) % if_divisible_by == 0 && (1 + index) != PUZZLE_DIMENTION;
+}
+
+fn value_or_letter_x(value: &Option<u8>) -> String {
+    return match value {
+        None => "x".into(),
         _ => value.as_ref().unwrap().to_string()
     };
-
-    print!("Cell value after {} is {}\n", after_operation, value_to_display);
 }
 
-fn write_all_elements_to_console(vector_name: &str, vector: &Vec<u8>){
-    print!("Contents of {} ", vector_name);
-    print!("{:?} \n", vector);
+fn draw_separator_line(length: usize) {
+    print!("{} \n", "_".repeat(length));
 }

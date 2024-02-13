@@ -1,3 +1,4 @@
 pub mod game;
 pub mod cell;
-mod consts;
+pub mod cell_grid;
+pub mod consts;
