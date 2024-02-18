@@ -1,6 +1,6 @@
 use std::ops::{IndexMut, Index};
 
-use super::{cell::Cell, consts};
+use super::{cell::Cell, consts, validatable_units::{BlockValidator, ColumnValidator, GameStateValidator, RowValidator, UnitValidator}};
 
 // This type is a workaround to help locate cells in a grid _without_ lifetimes, 
 // so that we don't have to continuously iterate over the whole grid constantly.
@@ -36,7 +36,11 @@ use super::{cell::Cell, consts};
 // }
 
 pub struct CellGrid {
-    pub grid: [[Cell; consts::PUZZLE_DIMENTION]; consts::PUZZLE_DIMENTION]
+    pub grid: [[Cell; consts::PUZZLE_DIMENTION]; consts::PUZZLE_DIMENTION],
+    row_validators: Vec<RowValidator>,
+    column_validators: Vec<ColumnValidator>,
+    block_validators: Vec<BlockValidator>,
+    unit_validator: UnitValidator
 }
 
 impl CellGrid{
@@ -44,6 +48,16 @@ impl CellGrid{
         return Self {
             grid: empty_grid()
         };
+    }
+}
+
+impl GameStateValidator for CellGrid {
+    fn is_valid(&self, grid: &CellGrid) -> bool {
+        todo!()
+    }
+
+    fn is_complete(&self, grid: &CellGrid) -> bool {
+        todo!()
     }
 }
 
