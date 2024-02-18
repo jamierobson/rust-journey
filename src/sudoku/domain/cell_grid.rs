@@ -1,8 +1,6 @@
 use std::ops::{IndexMut, Index};
 
-use super::{cell::Cell, consts::{PUZZLE_DIMENTION, PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH}, 
-// group_selectors::{BlockSelector, CellGroupSelector, ColumnSelector, RowSelector}, 
-validatable_units::{CellGroupValidator, GameStateValidator, UnitValidator}};
+use super::{cell::Cell, consts::{PUZZLE_DIMENTION, PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH}, validatable_units::{CellGroupValidator, GameStateValidator, UnitValidator}};
 
 // This type is a workaround to help locate cells in a grid _without_ lifetimes, 
 // so that we don't have to continuously iterate over the whole grid constantly.
@@ -103,7 +101,7 @@ fn get_row(row_number: usize, cell_grid: &CellGrid) -> Vec<&Cell> {
 }
 
 fn get_column(column_number: usize, cell_grid: &CellGrid) -> Vec<&Cell> {
-    return cell_grid.grid.iter().map(|row| &row[column_number]).collect();
+    return cell_grid.grid.iter().map(|&row| &row[column_number]).collect();
 }
 
 fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &CellGrid) -> Vec<&Cell> {
@@ -115,7 +113,6 @@ fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &Cel
 
     return cell_grid.grid[row_range_lower_index .. row_range_upper_index]
     .iter()
-    .flat_map(|row| row[column_range_lower_index .. column_range_upper_index]
-    .iter())
+    .flat_map(|&row| row[column_range_lower_index .. column_range_upper_index].iter())
     .collect()
 }

@@ -27,7 +27,7 @@ impl UnitValidator {
     }
 
     pub fn all_cells_filled_in_and_unique(&self, cells: &Vec<& Cell>) -> bool {
-        return cells.iter().all(|&c| c.value.is_some()) && self.cells_are_unique(&cells);
+        return cells.iter().all(|&cell| cell.value.is_some()) && self.cells_are_unique(&cells);
     }
 
 }
