@@ -15,7 +15,7 @@ impl Cell {
             value: None, 
             candidates: Vec::new(),
             discounted_values: Vec::new(),
-            potentially_valid_values: (0..=consts::PUZZLE_DIMENTION as u8).collect()
+            potentially_valid_values: (0..=consts::MAXIMUM_VALUE).collect()
         }
     }
 
@@ -68,5 +68,5 @@ fn add_to_collection<T>(collection : &mut Vec<T>, value: T) where T: PartialEq {
 }
 
 fn is_valid_cell_value(value: u8) -> bool{
-    return 1 <= value && value <= consts::PUZZLE_DIMENTION
+    return 1 <= value && value <= consts::MAXIMUM_VALUE
 }

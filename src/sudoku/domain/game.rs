@@ -1,5 +1,5 @@
 use super::cell_grid::CellGrid;
 
-struct Game {
+pub struct Game {
     cell_grid: CellGrid,
 }

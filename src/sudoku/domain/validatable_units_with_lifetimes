@@ -1,10 +1,10 @@
 
 // pub struct Unit<'a> {
-//     pub cells: [&'a Cell; PUZZLE_DIMENTION as usize]
+//     pub cells: [&'a Cell; PUZZLE_DIMENTION]
 // }
 
 // impl<'a> Unit<'a> {
-//     fn new(cells: [&'a Cell; PUZZLE_DIMENTION as usize]) -> Self{
+//     fn new(cells: [&'a Cell; PUZZLE_DIMENTION]) -> Self{
 //         return Self {
 //             cells
 //         };
@@ -28,7 +28,7 @@
 // todo: This lifetime stuff is here because I want to be smarter about building a reference once, 
 // pub struct Row<'a> {
 //     row_number: usize,
-//     cell_group: [&'a Cell; PUZZLE_DIMENTION as usize]
+//     cell_group: [&'a Cell; PUZZLE_DIMENTION]
 // }
 
 // impl<'a> Row<'a> {
@@ -39,7 +39,7 @@
 
 // pub struct Column<'a> {
 //     column_number: usize,
-//     cell_group: [&'a Cell; PUZZLE_DIMENTION as usize]
+//     cell_group: [&'a Cell; PUZZLE_DIMENTION]
 // }
 
 // impl<'a> Column<'a> {
@@ -51,7 +51,7 @@
 // pub struct Block<'a> {
 //     zero_index_block_from_left: usize,
 //     zero_index_block_from_top: usize,
-//     cell_group: [&'a Cell; PUZZLE_DIMENTION as usize]
+//     cell_group: [&'a Cell; PUZZLE_DIMENTION]
 // }
 
 // impl<'a> Block<'a> {

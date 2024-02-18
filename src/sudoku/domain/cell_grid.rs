@@ -15,10 +15,28 @@ use super::{cell::Cell, consts};
 // UI that allows me to use lifetimes, then I'll give that a go.
 // For now, this should get me going
 
+// pub struct LocatableCell {
+//     pub cell: Cell,
+//     pub grid_column_number: u8,
+//     pub grid_row_number: u8,
+// }
 
+// pub struct CoordinatesAscendingFromTopLeft {
+//     row: u8,
+//     column: u8
+// }
+
+// impl CoordinatesAscendingFromTopLeft {
+//     fn new(row: u8, column: u8) -> Self {
+//         return Self {
+//             row: row,
+//             column: column
+//         };
+//     }
+// }
 
 pub struct CellGrid {
-    pub grid: [[Cell; consts::PUZZLE_DIMENTION as usize]; consts::PUZZLE_DIMENTION as usize]
+    pub grid: [[Cell; consts::PUZZLE_DIMENTION]; consts::PUZZLE_DIMENTION]
 }
 
 impl CellGrid{
@@ -29,19 +47,19 @@ impl CellGrid{
     }
 }
 
-fn empty_grid() -> [[Cell; consts::PUZZLE_DIMENTION as usize]; consts::PUZZLE_DIMENTION as usize] {
+fn empty_grid() -> [[Cell; consts::PUZZLE_DIMENTION]; consts::PUZZLE_DIMENTION] {
     return core::array::from_fn(|_i| empty_row_array());
 
 }
 
-fn empty_row_array() -> [Cell; consts::PUZZLE_DIMENTION as usize]{
+fn empty_row_array() -> [Cell; consts::PUZZLE_DIMENTION]{
     return core::array::from_fn(|_i| Cell::new());
 }
 
 
 // allow index syntax on the cell grid itself
 impl Index<usize> for CellGrid{
-    type Output = [Cell; consts::PUZZLE_DIMENTION as usize];
+    type Output = [Cell; consts::PUZZLE_DIMENTION];
 
     fn index(&self, index: usize) -> &Self::Output {
         return &self.grid[index];
