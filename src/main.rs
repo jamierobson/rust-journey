@@ -1,5 +1,5 @@
 mod sudoku;
-use sudoku::domain::{cell::Cell, cell_grid::CellGrid, consts::{self, PUZZLE_DIMENTION}};
+use sudoku::domain::{cell::Cell, cell_grid::CellGrid, consts::{self, PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
 
 mod hello_world;
 
@@ -28,29 +28,29 @@ fn draw_full_grid(cell_grid: &CellGrid){
     let separator_line_length = create_row_line(&cell_grid[0]).len();
 
     draw_separator_line(separator_line_length);
-    for i in 0..consts::PUZZLE_DIMENTION {
+    for i in 0..PUZZLE_DIMENTION {
         draw_row(&cell_grid[i]);
         draw_separator_line(separator_line_length);     
-        if include_extra_separator(i.try_into().unwrap(), consts::PUZZLE_SUB_GRID_HEIGHT as u8) {
+        if include_extra_separator(i.try_into().unwrap(), PUZZLE_BLOCK_HEIGHT as u8) {
             draw_separator_line(separator_line_length);     
         }
     }
 }
 
-fn draw_row(row: &[Cell; consts::PUZZLE_DIMENTION]) {
+fn draw_row(row: &[Cell; PUZZLE_DIMENTION]) {
     print!("{}\n", create_row_line(row));
 }
 
-fn create_row_line(row: &[Cell; consts::PUZZLE_DIMENTION]) -> String {
+fn create_row_line(row: &[Cell; PUZZLE_DIMENTION]) -> String {
 
     let mut row_line_display: String = "|".to_owned();
 
-    for i in 0..consts::PUZZLE_DIMENTION {
+    for i in 0..PUZZLE_DIMENTION {
         row_line_display.push(' ');
         row_line_display.push_str(value_or_letter_x(&row[i].value).as_str());
         row_line_display.push_str(" |");
      
-        if include_extra_separator(i.try_into().unwrap(), consts::PUZZLE_SUB_GRID_WIDTH as u8) {
+        if include_extra_separator(i.try_into().unwrap(), PUZZLE_BLOCK_WIDTH as u8) {
             row_line_display.push('|');
         }
     }
