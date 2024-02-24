@@ -1,73 +1,51 @@
-use std::ops::{IndexMut, Index};
+use std::{ops::{Index, IndexMut}, rc::Rc};
 
-use super::{cell::Cell, consts::{PUZZLE_DIMENTION, PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH}, validatable_units::{CellGroupValidator, GameStateValidator, UnitValidator}};
-
-// This type is a workaround to help locate cells in a grid _without_ lifetimes, 
-// so that we don't have to continuously iterate over the whole grid constantly.
-// when wanting to check the validity of the single row-column-subblock impaced
-// by changing a cell
-// 
-// My preference is the idea whereby a cellgrid holds the cells, and the game holds "views" of the cellgrid, 
-// with rows, columns, subblocks holding references to cells, and then validation can ask these validatable units
-// for validity
-//
-// I want to avoid lifetimes so that I can compile to wasm, though if I can find some way to build a rudimentary
-// UI that allows me to use lifetimes, then I'll give that a go.
-// For now, this should get me going
-
-// pub struct LocatableCell {
-//     pub cell: Cell,
-//     pub grid_column_number: u8,
-//     pub grid_row_number: u8,
-// }
-
-// pub struct CoordinatesAscendingFromTopLeft {
-//     row: u8,
-//     column: u8
-// }
-
-// impl CoordinatesAscendingFromTopLeft {
-//     fn new(row: u8, column: u8) -> Self {
-//         return Self {
-//             row: row,
-//             column: column
-//         };
-//     }
-// }
+use super::{cell::Cell, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::{CellGroup, CellGroupValidator, GameStateValidator, UnitValidator}};
 
 pub struct CellGrid {
     pub grid: [[Cell; PUZZLE_DIMENTION]; PUZZLE_DIMENTION],
-    // row_validators: Vec<RowSelector>,
-    // column_validators: Vec<ColumnSelector>,
-    // block_validators: Vec<BlockSelector>,
+    pub rows: Vec<CellGroup>,
+    pub columns: Vec<CellGroup>,
+    pub blocks: Vec<CellGroup>,
     unit_validator: UnitValidator
 }
 
 impl CellGrid{
     pub fn new() -> Self {
+        let cell_grid = empty_grid();
+        let cell_reference_grid = cell_reference_grid(&cell_grid);
+
+        let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_reference_grid)).collect();
+        let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cell_reference_grid)).collect();
+        let mut blocks = Vec::<CellGroup>::new();
+
+        for x in 0 .. PUZZLE_BLOCK_HEIGHT {
+        for y in 0 .. PUZZLE_BLOCK_HEIGHT {
+            blocks.push(get_block(x, y, &cell_reference_grid));
+        }}
+
+
         return Self {
-            grid: empty_grid(),
-            // row_validators: (0..PUZZLE_DIMENTION).map(|i| RowSelector::new(i)).collect(),
-            // column_validators: (0..PUZZLE_DIMENTION).map(|i| ColumnSelector::new(i)).collect(),
-            // block_validators: (0 .. PUZZLE_BLOCK_WIDTH).flat_map(|x| (0 .. PUZZLE_BLOCK_HEIGHT).map(|y| BlockSelector::new(x, y))).collect(),
-            unit_validator: UnitValidator::new()
+            rows: rows,
+            columns: columns,
+            blocks: blocks,
+            unit_validator: UnitValidator::new(),
+            grid: cell_grid
         };
     }
 }
 
 impl GameStateValidator for CellGrid {
     fn is_valid(&self) -> bool {
-        return 
-            self.row_validators.iter().all(|x| self.unit_validator.is_valid(&x.get_cells(self)))
-            && self.column_validators.iter().all(|x| self.unit_validator.is_valid(&x.get_cells(self)))
-            && self.block_validators.iter().all(|x| self.unit_validator.is_valid(&x.get_cells(self)));
+            return self.rows.iter().all(|r| self.unit_validator.is_valid(r))
+            && self.columns.iter().all(|r| self.unit_validator.is_valid(r))
+            && self.blocks.iter().all(|r| self.unit_validator.is_valid(r));
     }
 
     fn is_complete(&self) -> bool {
-        return 
-            self.row_validators.iter().all(|x| self.unit_validator.is_complete(&x.get_cells(self)))
-            && self.column_validators.iter().all(|x| self.unit_validator.is_complete(&x.get_cells(self)))
-            && self.block_validators.iter().all(|x| self.unit_validator.is_complete(&x.get_cells(self)));
+        return self.rows.iter().all(|r| self.unit_validator.is_complete(r))
+        && self.columns.iter().all(|r| self.unit_validator.is_complete(r))
+        && self.blocks.iter().all(|r| self.unit_validator.is_complete(r));
     }
 }
 
@@ -80,6 +58,47 @@ fn empty_row_array() -> [Cell; PUZZLE_DIMENTION]{
     return core::array::from_fn(|_i| Cell::new());
 }
 
+fn cell_reference_grid(cells: &[[Cell; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> [[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
+    
+    return core::array::from_fn(|i| empty_row_refernce_array(&cells[i]));
+}
+
+fn empty_row_refernce_array(row: &[Cell; PUZZLE_DIMENTION]) -> [Rc<Cell>; PUZZLE_DIMENTION]{
+    let mut reference_array: [Rc<Cell>; PUZZLE_DIMENTION] = Default::default();
+
+    for (i, cell) in row.iter().enumerate() {
+        reference_array[i] = Rc::new(cell.clone())
+    }
+
+    return reference_array;
+}
+
+fn get_row(row_number: usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+    let cells = cell_grid[row_number].iter().map(|c| c.clone()).collect();
+    return CellGroup::new(cells);
+}
+
+fn get_column(column_number: usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+
+    let cells = cell_grid.iter().map(|row| row[column_number].clone()).collect();
+    return CellGroup::new(cells);
+}
+
+fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+
+    let row_range_lower_index = block_row_number * PUZZLE_BLOCK_HEIGHT;
+    let row_range_upper_index = block_row_number * PUZZLE_BLOCK_HEIGHT + PUZZLE_BLOCK_HEIGHT;
+    let column_range_lower_index = block_column_number * PUZZLE_BLOCK_WIDTH;
+    let column_range_upper_index = block_column_number * PUZZLE_BLOCK_WIDTH + PUZZLE_BLOCK_WIDTH;
+
+    let cells  = cell_grid[row_range_lower_index .. row_range_upper_index]
+    .iter()
+    .flat_map(|row| row[column_range_lower_index .. column_range_upper_index].iter())
+    .map(|c| c.clone())
+    .collect();
+
+    return CellGroup::new(cells);
+}
 
 // allow index syntax on the cell grid itself
 impl Index<usize> for CellGrid{
@@ -94,25 +113,4 @@ impl IndexMut<usize> for CellGrid{
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         return &mut self.grid[index];
     }
-}
-
-fn get_row(row_number: usize, cell_grid: &CellGrid) -> Vec<&Cell> {
-    return cell_grid[row_number].iter().collect();
-}
-
-fn get_column(column_number: usize, cell_grid: &CellGrid) -> Vec<&Cell> {
-    return cell_grid.grid.iter().map(|&row| &row[column_number]).collect();
-}
-
-fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &CellGrid) -> Vec<&Cell> {
-
-    let row_range_lower_index = block_row_number * PUZZLE_BLOCK_HEIGHT;
-    let row_range_upper_index = block_row_number * PUZZLE_BLOCK_HEIGHT + PUZZLE_BLOCK_HEIGHT;
-    let column_range_lower_index = block_column_number * PUZZLE_BLOCK_WIDTH;
-    let column_range_upper_index = block_column_number * PUZZLE_BLOCK_WIDTH + PUZZLE_BLOCK_WIDTH;
-
-    return cell_grid.grid[row_range_lower_index .. row_range_upper_index]
-    .iter()
-    .flat_map(|&row| row[column_range_lower_index .. column_range_upper_index].iter())
-    .collect()
 }

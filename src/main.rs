@@ -1,5 +1,6 @@
 mod sudoku;
-use sudoku::domain::{cell::Cell, cell_grid::CellGrid, consts::{self, PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
+
+use sudoku::domain::{cell::Cell, cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
 
 mod hello_world;
 
@@ -20,7 +21,12 @@ fn main() {
     // Or just accept the quirk?
     draw_full_grid(&cell_grid);
 
-    print!("Is this valid? {}", &cell_grid.is_valid());
+    print!("Is this valid? {}\n", &cell_grid.is_valid());
+
+    for row in cell_grid.rows {
+        let c: Vec<_> = row.cells.iter().map(|x| x.value).collect();
+        print!("Rc<Cell>s {:?} \n", c) 
+    }
 }
 
 fn draw_full_grid(cell_grid: &CellGrid){

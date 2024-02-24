@@ -57,6 +57,7 @@ impl Cell {
     }
 }
 
+
 fn remove_from_collection<T>(collection: &mut Vec<T>, value: T) where T: PartialEq {
     collection.retain(|x| *x != value);
 }
