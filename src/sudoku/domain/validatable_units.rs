@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use super::cell::Cell;
 
@@ -21,7 +21,7 @@ impl UnitValidator {
     }
     
     pub fn cells_are_unique(&self, cell_group: &CellGroup) -> bool{
-        let actual_values: Vec<u8> = cell_group.cells.iter().filter(|&cell| cell.value.is_some()).map(|cell| cell.value.unwrap()).collect();
+        let actual_values: Vec<u8> = cell_group.cells.iter().filter(|&cell| cell.borrow().value.is_some()).map(|cell| cell.borrow().value.unwrap()).collect();
         let mut deduped: Vec<u8> = actual_values.to_vec();
         deduped.dedup();
 
@@ -29,7 +29,7 @@ impl UnitValidator {
     }
 
     pub fn all_cells_filled_in_and_unique(&self, cell_group: &CellGroup) -> bool {
-        return cell_group.cells.iter().all(|cell| cell.value.is_some()) && self.cells_are_unique(cell_group);
+        return cell_group.cells.iter().all(|cell| cell.borrow().value.is_some()) && self.cells_are_unique(cell_group);
     }
 
 }
@@ -44,11 +44,11 @@ impl CellGroupValidator for UnitValidator {
     }
 }
 pub struct CellGroup {
-    pub cells: Vec<Rc<Cell>>
+    pub cells: Vec<Rc<RefCell<Cell>>>
 }
 
 impl CellGroup {
-    pub fn new(cells: Vec<Rc<Cell>>) -> Self {
+    pub fn new(cells: Vec<Rc<RefCell<Cell>>>) -> Self {
         return Self {
             cells: cells
         };

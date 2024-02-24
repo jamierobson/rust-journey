@@ -1,9 +1,9 @@
-use std::{ops::{Index, IndexMut}, rc::Rc};
+use std::{cell::RefCell, ops::{Index, IndexMut}, rc::Rc};
 
 use super::{cell::Cell, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::{CellGroup, CellGroupValidator, GameStateValidator, UnitValidator}};
 
 pub struct CellGrid {
-    pub grid: [[Cell; PUZZLE_DIMENTION]; PUZZLE_DIMENTION],
+    pub grid: [[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION],
     pub rows: Vec<CellGroup>,
     pub columns: Vec<CellGroup>,
     pub blocks: Vec<CellGroup>,
@@ -13,15 +13,15 @@ pub struct CellGrid {
 impl CellGrid{
     pub fn new() -> Self {
         let cell_grid = empty_grid();
-        let cell_reference_grid = cell_reference_grid(&cell_grid);
+        // let cell_reference_grid = cell_reference_grid(&cell_grid);
 
-        let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_reference_grid)).collect();
-        let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cell_reference_grid)).collect();
+        let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_grid)).collect();
+        let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cell_grid)).collect();
         let mut blocks = Vec::<CellGroup>::new();
 
         for x in 0 .. PUZZLE_BLOCK_HEIGHT {
         for y in 0 .. PUZZLE_BLOCK_HEIGHT {
-            blocks.push(get_block(x, y, &cell_reference_grid));
+            blocks.push(get_block(x, y, &cell_grid));
         }}
 
 
@@ -49,42 +49,28 @@ impl GameStateValidator for CellGrid {
     }
 }
 
-fn empty_grid() -> [[Cell; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
+fn empty_grid() -> [[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
     return core::array::from_fn(|_i| empty_row_array());
 
 }
 
-fn empty_row_array() -> [Cell; PUZZLE_DIMENTION]{
-    return core::array::from_fn(|_i| Cell::new());
+fn empty_row_array() -> [Rc<RefCell<Cell>>; PUZZLE_DIMENTION]{
+    // return core::array::from_fn(|_i| Rc::new(Cell::new()));
+    return core::array::from_fn(|_i| Rc::new(RefCell::new(Cell::new())));
 }
 
-fn cell_reference_grid(cells: &[[Cell; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> [[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
-    
-    return core::array::from_fn(|i| empty_row_refernce_array(&cells[i]));
-}
-
-fn empty_row_refernce_array(row: &[Cell; PUZZLE_DIMENTION]) -> [Rc<Cell>; PUZZLE_DIMENTION]{
-    let mut reference_array: [Rc<Cell>; PUZZLE_DIMENTION] = Default::default();
-
-    for (i, cell) in row.iter().enumerate() {
-        reference_array[i] = Rc::new(cell.clone())
-    }
-
-    return reference_array;
-}
-
-fn get_row(row_number: usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+fn get_row(row_number: usize, cell_grid: &[[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
     let cells = cell_grid[row_number].iter().map(|c| c.clone()).collect();
     return CellGroup::new(cells);
 }
 
-fn get_column(column_number: usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+fn get_column(column_number: usize, cell_grid: &[[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
 
     let cells = cell_grid.iter().map(|row| row[column_number].clone()).collect();
     return CellGroup::new(cells);
 }
 
-fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &[[Rc<Cell>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
+fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &[[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> CellGroup {
 
     let row_range_lower_index = block_row_number * PUZZLE_BLOCK_HEIGHT;
     let row_range_upper_index = block_row_number * PUZZLE_BLOCK_HEIGHT + PUZZLE_BLOCK_HEIGHT;
@@ -102,7 +88,7 @@ fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &[[R
 
 // allow index syntax on the cell grid itself
 impl Index<usize> for CellGrid{
-    type Output = [Cell; PUZZLE_DIMENTION];
+    type Output = [Rc<RefCell<Cell>>; PUZZLE_DIMENTION];
 
     fn index(&self, index: usize) -> &Self::Output {
         return &self.grid[index];
