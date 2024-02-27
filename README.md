@@ -60,3 +60,20 @@ The relationships between the grid, and the rows/columns/blocks has been a real 
 So I ended up the place I really wanted to avoid, the `Rc<RefCell<Cell>>`. 
 
 At least now the rows/columns/blocks actually point at my cells now, and I can update the cell values as expected. Not best thrilled about it, but it's progress,
+
+
+## Trying to get rid of RefCell
+I now have a construction whereby the grid has Cells, and want explore all the potential ways I can get rid of this RefCell. It feels like a crutch, and I hear that this is precisely true. Here's what I tried
+
+- Adding lifetimes
+  
+  This fell over when either creating the game, or the grid, I would create something and then eventually call some kind of function with closure to create the blocks/rows/columns which ended up borrowing the grid, and not letting me assign the when constructing Self
+
+- Adding Weak references
+  
+  Fell over trying to actually tie up the references. This I am actively working on, but it feels terrible to work with unsafe code, especially so soon. In good news, I've been able to not run into memory issues, but the matching of the reference blocks to the original data isn't in place. Was I close? I don't know
+
+
+I mean either way, it's obviously a skill issue.
+
+I can also consider being wasteful, and just recomputing every grouping involving a changed cell, every time a change is made. This feels wasteful, but could be the easiest way to code it. I'll reassess yet again when we get to the other side

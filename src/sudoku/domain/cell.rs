@@ -1,7 +1,6 @@
 use super::consts;
 
-
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Cell {
     pub value: Option<u8>,
     pub candidates: Vec<u8>,
