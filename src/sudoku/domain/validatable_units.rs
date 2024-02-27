@@ -1,5 +1,4 @@
 use std::{cell::RefCell, rc::Rc};
-
 use super::cell::Cell;
 
 pub trait GameStateValidator {

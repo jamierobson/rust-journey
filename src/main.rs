@@ -1,34 +1,20 @@
-mod sudoku;
-
-use std::{cell::RefCell, rc::Rc};
-
-use sudoku::domain::{cell::Cell, cell_grid::CellGrid, game::Game, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
-
 mod hello_world;
+mod sudoku;
+use std::{cell::RefCell, rc::Rc};
+use sudoku::domain::{cell::Cell, cell_grid::CellGrid, game::Game, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
 
 fn main() {
     hello_world::greeter::say_hello();
     let sudoku = Game::new();
-
-    // We've implemented index and indexmut so that we can index into the grid and keep the grid structure itself private
-    // todo: I might still prefer to enforce something like get_value and set_value on the grid type itself, 
-    // so that it and only it interfaces with the underlying data structure.
-    // For now, I think this is ok enough to proceed
     sudoku.cell_grid[2][1].borrow_mut().set_value(9); 
     sudoku.cell_grid[6][6].borrow_mut().set_value(6);
 
     print!("Ok let's try drawing the whole grid! \n");
     
-    //todo: This draws as (y, x) because we index into rows first, then the column value from there. Change? 
-    // Or just accept the quirk?
+    //todo: This draws as (y, x) because we index into rows first, then the column value from there
     draw_full_grid(&sudoku.cell_grid);
 
-    print!("Is this valid? {}\n", &sudoku.cell_grid.is_valid());
-
-    for row in sudoku.cell_grid.rows {
-        let c: Vec<_> = row.cells.iter().map(|x| x.borrow().value).collect();
-        print!("Rc<RefCell<Cell>>\n {:?} \n", c) 
-    }
+    print!("Is this valid? {}\n", &sudoku.is_valid());
 }
 
 fn draw_full_grid(cell_grid: &CellGrid){
