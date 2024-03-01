@@ -8,13 +8,27 @@ fn main() {
     let sudoku = Game::new();
     sudoku.cell_grid[2][1].borrow_mut().set_value(9); 
     sudoku.cell_grid[6][6].borrow_mut().set_value(6);
+    sudoku.cell_grid[7][7].borrow_mut().set_value(6);
 
     print!("Ok let's try drawing the whole grid! \n");
     
-    //todo: This draws as (y, x) because we index into rows first, then the column value from there
-    draw_full_grid(&sudoku.cell_grid);
-
+    draw_full_grid(&sudoku.cell_grid); //This draws as (y, x) because we index into rows first, then the column value from there
     print!("Is this valid? {}\n", &sudoku.is_valid());
+
+    print!("\n OK Drawing the rows now, the Weak<Refcell<Cell>>\n");
+
+    for game_row in sudoku.rows {
+        let row: [Rc<RefCell<Cell>>; PUZZLE_DIMENTION] = 
+            (0..PUZZLE_DIMENTION)
+            .map(|i| {
+                game_row.cells[i].upgrade().unwrap()
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+            
+            draw_row(&row);
+    };
 }
 
 fn draw_full_grid(cell_grid: &CellGrid){

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Weak};
 use super::cell::Cell;
 
 pub trait GameStateValidator {
@@ -18,36 +18,41 @@ impl UnitValidator {
     pub fn new() -> Self{
         return Self {}
     }
-    
-    pub fn cells_are_unique(&self, cell_group: &CellGroup) -> bool{
-        let actual_values: Vec<u8> = cell_group.cells.iter().filter(|&cell| cell.borrow().value.is_some()).map(|cell| cell.borrow().value.unwrap()).collect();
-        let mut deduped: Vec<u8> = actual_values.to_vec();
-        deduped.dedup();
-
-        return actual_values.len() == deduped.len();
-    }
-
-    pub fn all_cells_filled_in_and_unique(&self, cell_group: &CellGroup) -> bool {
-        return cell_group.cells.iter().all(|cell| cell.borrow().value.is_some()) && self.cells_are_unique(cell_group);
-    }
-
 }
 
 impl CellGroupValidator for UnitValidator {
     fn is_valid(&self, cell_group: &CellGroup) -> bool {
-        return self.cells_are_unique(&cell_group);
+
+        let all_cell_values: Vec<u8> = 
+            cell_group
+            .cells
+            .iter()
+            .filter_map(|weak| weak.upgrade())
+            .filter_map(|rc| rc.borrow().value)
+            .collect();
+
+        let mut deduped: Vec<u8> = all_cell_values.to_vec();
+        deduped.dedup();
+
+        return all_cell_values.len() == deduped.len();
+
     }
 
     fn is_complete(&self, cell_group: &CellGroup) -> bool {
-        return self.all_cells_filled_in_and_unique(cell_group)   
+        return self.is_valid(cell_group) &&
+            cell_group
+            .cells
+            .iter()
+            .all(|weak| weak.upgrade().is_some_and(|rc| rc.borrow().value.is_some()));
+
     }
 }
 pub struct CellGroup {
-    pub cells: Vec<Rc<RefCell<Cell>>>
+    pub cells: Vec<Weak<RefCell<Cell>>>
 }
 
 impl CellGroup {
-    pub fn new(cells: Vec<Rc<RefCell<Cell>>>) -> Self {
+    pub fn new(cells: Vec<Weak<RefCell<Cell>>>) -> Self {
         return Self {
             cells: cells
         };
