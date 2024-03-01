@@ -14,7 +14,7 @@ impl Cell {
             value: None, 
             candidates: Vec::new(),
             discounted_values: Vec::new(),
-            potentially_valid_values: (0..=consts::MAXIMUM_VALUE).collect()
+            potentially_valid_values: (0..=consts::PUZZLE_MAXIMUM_VALUE).collect()
         }
     }
 
@@ -68,5 +68,43 @@ fn add_to_collection<T>(collection : &mut Vec<T>, value: T) where T: PartialEq {
 }
 
 fn is_valid_cell_value(value: u8) -> bool{
-    return 1 <= value && value <= consts::MAXIMUM_VALUE
+    return 1 <= value && value <= consts::PUZZLE_MAXIMUM_VALUE
+}
+
+#[cfg(test)]
+mod tests {
+    use self::consts::PUZZLE_MAXIMUM_VALUE;
+    use super::*;
+
+    #[test]
+    fn cell_value_none_by_default() {
+
+        let cell = Cell::new();
+        assert_eq!(cell.value, None);
+    }
+
+    #[test]
+    fn cell_set_provided_value_when_in_range() {
+
+        let mut cell = Cell::new();
+        for value in 1..=PUZZLE_MAXIMUM_VALUE{
+            cell.set_value(value);
+            assert_eq!(cell.value.unwrap(), value);
+        }
+    }
+
+    #[test]
+    fn cell_not_set_value_when_out_of_range() {
+
+        const OUT_OF_RANGE: u8 = PUZZLE_MAXIMUM_VALUE + 1;
+        let mut cell = Cell::new();
+        cell.set_value(OUT_OF_RANGE);
+        assert_eq!(cell.value, None);
+
+        const EXPECTED: u8 = PUZZLE_MAXIMUM_VALUE - 1;
+
+        cell.set_value(EXPECTED);
+        cell.set_value(OUT_OF_RANGE);
+        assert_eq!(cell.value.unwrap(), EXPECTED);
+    }
 }

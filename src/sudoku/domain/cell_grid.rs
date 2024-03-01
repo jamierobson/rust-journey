@@ -39,3 +39,23 @@ impl IndexMut<usize> for CellGrid{
         return &mut self.grid[index];
     }
 }
+
+#[cfg(test)]
+mod tests {
+        use super::*;
+
+        #[test]
+        fn cell_grid_initialized_with_all_empty_cells() {
+            let cell_grid = CellGrid::new();
+
+            let any_cells_have_value = 
+                cell_grid.grid
+                .iter()
+                .flat_map(|row| row.iter())
+                .any(|rc| rc.borrow().value.is_some());
+
+
+            assert_eq!(any_cells_have_value, false);
+        }
+
+}
