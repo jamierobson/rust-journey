@@ -58,3 +58,99 @@ impl CellGroup {
         };
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+    use super::*;
+
+    fn cell_reference_from_value(cell_value_option: Option<u8>) -> Rc<RefCell<Cell>> {
+        
+        let new_cell_ref = Rc::new(RefCell::new(Cell::new()));
+        if let Some(value) = cell_value_option {
+            new_cell_ref.borrow_mut().set_value(value);
+        }
+        return new_cell_ref;
+    }
+
+    #[test]
+    fn is_valid_true_when_empty_cells() {
+
+        let cells = vec![
+            cell_reference_from_value(None),
+            cell_reference_from_value(None),
+        ];
+
+        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let group = CellGroup::new(weak);
+        let unit_validator = UnitValidator::new();
+
+        assert_eq!(unit_validator.is_valid(&group), true);
+    }
+
+    #[test]
+    fn is_valid_true_when_different_values() {
+        
+        let cells = vec![
+            cell_reference_from_value(None),
+            cell_reference_from_value(None),
+            cell_reference_from_value(Some(1)),
+            cell_reference_from_value(Some(2))
+        ];
+
+        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let group = CellGroup::new(weak);
+        let unit_validator = UnitValidator::new();
+
+        assert_eq!(unit_validator.is_valid(&group), true);
+    }
+
+    #[test]
+    fn is_complete_false_when_different_values_but_some_none() {
+
+        let cells = vec![
+            cell_reference_from_value(None),
+            cell_reference_from_value(Some(1)),
+            cell_reference_from_value(Some(2))
+        ];
+
+        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let group = CellGroup::new(weak);
+        let unit_validator = UnitValidator::new();
+
+        assert_eq!(unit_validator.is_complete(&group), false);
+    }
+
+    #[test]
+    fn is_complete_true_when_different_values_but_and_all_have_values() {
+
+        let cells = vec![
+            cell_reference_from_value(Some(1)),
+            cell_reference_from_value(Some(2)),
+            cell_reference_from_value(Some(3)),
+            cell_reference_from_value(Some(4)),
+            cell_reference_from_value(Some(5)),
+        ];
+
+        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let group = CellGroup::new(weak);
+        let unit_validator = UnitValidator::new();
+
+        assert_eq!(unit_validator.is_complete(&group), true);
+    }
+
+    #[test]
+    fn is_valid_false_when_duplicates() {
+        
+        let cells = vec![
+            cell_reference_from_value(Some(1)),
+            cell_reference_from_value(Some(1))
+        ];
+
+        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let group = CellGroup::new(weak);
+        let unit_validator = UnitValidator::new();
+
+        assert_eq!(unit_validator.is_valid(&group), false);
+    }
+}
