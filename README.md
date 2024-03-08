@@ -71,9 +71,16 @@ I now have a construction whereby the grid has Cells, and want explore all the p
 
 - Adding Weak references
   
-  Fell over trying to actually tie up the references. This I am actively working on, but it feels terrible to work with unsafe code, especially so soon. In good news, I've been able to not run into memory issues, but the matching of the reference blocks to the original data isn't in place. Was I close? I don't know
+  I fell over with the `Weak<Cell>` idea, but `Weak<RefCell>` is still a step in the right direction, I feel, so I'll roll with it.
 
+- Avoiding the references, hoping that slicing is performant
 
-I mean either way, it's obviously a skill issue.
+If I store on the cell it's row and column, then we can always use these coordinates to identify which cell, block, row it would be in, create 3 `CellGroup` and use these. It means constantly recomputing which cells belong in which group, so that something can, say, tell every other cell in all of the groups to delete a candidate when setting a number, but this is a step i may move to. 
 
-I can also consider being wasteful, and just recomputing every grouping involving a changed cell, every time a change is made. This feels wasteful, but could be the easiest way to code it. I'll reassess yet again when we get to the other side
+Time to move on, for now
+
+## Getting on with things
+Now that this is out of the way, I decided to move on to getting valid games into the program, and explored the `Regex` type. I find it funny that it is searching in a `haystack`. I don't know if that's proper terminology, but I chuckled. Defining a puzzle as a `&str` whose every character is 1-9 or a "." to represent nothing, then mapping that to just an `Option<u8>` grid, which I can use to spawn cells with values seems to work. I am happy for the exitence of the `from_fn` array function. I didn't know if it was better to make my `Parser` a type or not, but recreating `Regex` to parse new games feels awkward. But then again, so does the empty constructor. Maybe it makes more sense when I want to support differernt sizes.
+
+## Simple solves
+Now that we're fighting less against the syntax and the borrow checker, I'm able to start to be a touch more expressive, in creating a simple solve when there's 1 obvious candidate for a cell. I have a test that can solve at least one non-trivial but very easy puzzle!

@@ -1,6 +1,9 @@
-use std::rc::Rc;
+use std::{rc::Rc};
 
 use super::{cell_grid::{CellGrid, GridOfReferences}, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::{CellGroup, CellGroupValidator, GameStateValidator, UnitValidator}};
+
+pub type SeedRow = [Option<u8>; PUZZLE_DIMENTION];
+pub type SeedGrid = [SeedRow; PUZZLE_DIMENTION];
 
 pub struct Game {
     pub cell_grid: CellGrid,
@@ -11,8 +14,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Self {
-
+    pub fn default() -> Self {
         let cell_grid =  CellGrid::new();
         let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_grid.grid)).collect();
         let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cell_grid.grid)).collect();
@@ -30,6 +32,31 @@ impl Game {
             blocks: blocks,
             unit_validator: UnitValidator::new()
         }
+    }
+
+    pub fn new(seed: &[[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> Self {
+        //todo: Split out what's copied here, even though constructor bits are awkward with referenced items
+        let cell_grid =  CellGrid::from_seed(seed);
+        let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_grid.grid)).collect();
+        let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cell_grid.grid)).collect();
+        let mut blocks = Vec::<CellGroup>::new();
+
+        for x in 0 .. PUZZLE_BLOCK_HEIGHT {
+        for y in 0 .. PUZZLE_BLOCK_WIDTH {
+            blocks.push(get_block(x, y, &cell_grid.grid));
+        }}
+
+        Self {
+            cell_grid: cell_grid,
+            rows: rows,
+            columns: columns,
+            blocks: blocks,
+            unit_validator: UnitValidator::new()
+        }
+    }
+
+    pub fn count_cells_with_value(&self) -> usize {
+        return self.cell_grid.grid.iter().flatten().filter(|&rc| rc.borrow().value.is_some()).count();
     }
 }
 

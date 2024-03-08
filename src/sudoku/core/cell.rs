@@ -1,16 +1,19 @@
-use super::consts;
+use super::consts::PUZZLE_MAXIMUM_VALUE;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Cell {
     pub value: Option<u8>,
-    pub candidates: Vec<u8>,
     pub discounted_values: Vec<u8>,
     potentially_valid_values: Vec<u8>
 }
 
 impl Cell {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            value: None,
+            discounted_values: Vec::new(),
+            potentially_valid_values: (1..=PUZZLE_MAXIMUM_VALUE).collect()
+        }
     }
 
     pub fn from_value(value: Option<u8>) -> Self {
@@ -28,7 +31,6 @@ impl Cell {
             return;
         }
         self.value = Some(value);
-        self.candidates.clear();
         self.discounted_values.clear();
         self.potentially_valid_values.clear();
     }
@@ -39,28 +41,35 @@ impl Cell {
         }
 
         add_to_collection(&mut self.discounted_values, value);
-        remove_from_collection(&mut self.candidates, value);
         remove_from_collection(&mut self.potentially_valid_values, value);
+    }
+
+    pub fn discount_values(&mut self, values: impl AsRef<[u8]>) {
+        for &value in values.as_ref() {
+            self.discount_value(value)
+        }
     }
 
     pub fn add_candidate(&mut self, value: u8) {
         if !is_valid_cell_value(value){
             return;
         }
-        add_to_collection(&mut self.candidates, value);
         add_to_collection(&mut self.potentially_valid_values, value);
         remove_from_collection(&mut self.discounted_values, value);
     }
 
-    pub fn remove_candidate(&mut self, value: u8) {
-        if !is_valid_cell_value(value){
-            return;
+    pub fn try_complete(&mut self) {
+        if self.potentially_valid_values.len() == 1 {
+            self.set_value(self.potentially_valid_values[0]);
         }
-        remove_from_collection(&mut self.candidates, value);
-        remove_from_collection(&mut self.potentially_valid_values, value);
     }
 }
 
+impl Default for Cell {
+    fn default() -> Self {
+        Cell::new()
+    }
+}
 
 fn remove_from_collection<T>(collection: &mut Vec<T>, value: T) where T: PartialEq {
     collection.retain(|x| *x != value);
@@ -73,12 +82,11 @@ fn add_to_collection<T>(collection : &mut Vec<T>, value: T) where T: PartialEq {
 }
 
 fn is_valid_cell_value(value: u8) -> bool{
-    return 1 <= value && value <= consts::PUZZLE_MAXIMUM_VALUE
+    return (1..=PUZZLE_MAXIMUM_VALUE).contains(&value);
 }
 
 #[cfg(test)]
 mod tests {
-    use self::consts::PUZZLE_MAXIMUM_VALUE;
     use super::*;
 
     #[test]
@@ -111,5 +119,45 @@ mod tests {
         cell.set_value(EXPECTED);
         cell.set_value(OUT_OF_RANGE);
         assert_eq!(cell.value.unwrap(), EXPECTED);
+    }
+
+    #[test]
+    fn try_complete_value_sets_correct_value() {
+
+        for expected in 1..=PUZZLE_MAXIMUM_VALUE {
+            let mut cell = Cell::new();
+            let discounted_values: Vec<u8> = (1..=PUZZLE_MAXIMUM_VALUE).filter(|&x| x != expected).collect();
+            cell.discount_values(discounted_values);
+            cell.try_complete();
+
+            assert!(cell.value.is_some());
+            assert_eq!(cell.value.unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn try_complete_value_does_not_set_value_when_more_than_one_missing_value() {
+
+        let mut cell = Cell::new();
+        cell.discount_values((3..=PUZZLE_MAXIMUM_VALUE).collect::<Vec<u8>>());
+        assert!(cell.value.is_none());
+    }
+
+    #[test]
+    fn from_value_give_cell_with_set_value() {
+        let cell = Cell::from_value(Some(5));
+        assert_eq!(cell.value.unwrap_or_default(), 5);
+    }
+
+    #[test]
+    fn from_value_give_cell_with_none_when_out_of_range() {
+        let cell = Cell::from_value(Some(PUZZLE_MAXIMUM_VALUE + 1));
+        assert!(cell.value.is_none());
+    }
+
+    #[test]
+    fn from_value_give_cell_with_none_when_none_given() {
+        let cell = Cell::from_value(None);
+        assert!(cell.value.is_none());
     }
 }

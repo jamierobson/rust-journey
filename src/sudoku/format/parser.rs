@@ -4,7 +4,7 @@
 
 use regex::Regex;
 
-use crate::sudoku::core::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION};
+use crate::sudoku::core::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
 
 const NINE_X_NINE_CELL_REGEX: &str = "^[1-9.]{81}$";
 
@@ -23,20 +23,18 @@ impl Parser {
         return self.regex.is_match(input);
     }
 
-    pub fn to_grid(&self, input: &str) -> Result<CellGrid, &str> {
+    pub fn new_game(&self, input: &str) -> Result<Game, String> {
         
         if !self.can_parse(input) {
-            return Err("The input {input} wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}");
+            return Err(format!("The input '{input}' wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}"));
         }
 
         let values = values_from_input(&input);
-        let cell_grid = CellGrid::from_seed(&values);
-
-        return Ok(cell_grid);
+        return Ok(Game::new(&values));
     }
 }
 
-fn values_from_input(input: &str) -> [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
+fn values_from_input(input: &str) -> SeedGrid {
     let mut grid = [[None; PUZZLE_DIMENTION]; PUZZLE_DIMENTION];
     
     for (index, c) in input.chars().enumerate() {
@@ -111,7 +109,7 @@ mod tests {
     #[test]
     fn to_grid_returns_err_when_invalid_input() {
         let parser = Parser::new();
-        let cell_grid_result = parser.to_grid("invalid");
+        let cell_grid_result = parser.new_game("invalid");
         assert!(cell_grid_result.is_err());
     }
 
@@ -119,9 +117,9 @@ mod tests {
     fn to_grid_returns_empty_grid_when_all_periods() {
         let parser = Parser::new();
         let empty = repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT);
-        let cell_grid_result = parser.to_grid(&empty);
-        assert!(cell_grid_result.is_ok());
-        cell_grid_result.unwrap().grid.iter().flat_map(|x| x.iter()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
+        let result = parser.new_game(&empty);
+        assert!(result.is_ok());
+        result.unwrap().cell_grid.grid.iter().flat_map(|x| x.iter()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
     }
 
     #[test]
@@ -132,10 +130,10 @@ mod tests {
         let mut string_representation = expected.to_string().as_str().to_owned();
         string_representation.push_str(&repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT-1));
 
-        let cell_grid_result = parser.to_grid(&string_representation);
+        let result = parser.new_game(&string_representation);
         
-        assert!(cell_grid_result.is_ok());
-        let found_value = cell_grid_result.unwrap().grid[0][0].borrow().value;
+        assert!(result.is_ok());
+        let found_value = result.unwrap().cell_grid.grid[0][0].borrow().value;
         assert!(found_value.is_some());
         assert_eq!(found_value.unwrap(), expected)
     }
@@ -149,14 +147,14 @@ mod tests {
         let row: [Option<u8>; PUZZLE_DIMENTION] = (1..=PUZZLE_MAXIMUM_VALUE).map(|value| Some(value)).collect::<Vec<_>>().try_into().unwrap();
         let expected_values: [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] = core::array::from_fn(|_i| row.clone());
 
-        let cell_grid_result = parser.to_grid(&string_representation);
-        assert!(cell_grid_result.is_ok());
+        let result = parser.new_game(&string_representation);
+        assert!(result.is_ok());
 
-        let cell_grid = cell_grid_result.unwrap();
+        let game = result.unwrap();
 
         for row in 0..PUZZLE_DIMENTION {
         for column in 0..PUZZLE_DIMENTION {
-            let actual = cell_grid[row][column].borrow().value;
+            let actual = game.cell_grid[row][column].borrow().value;
             assert!(actual.is_some());
             let expected = expected_values[row][column].expect("there should be a value here according to the test setup");
             
