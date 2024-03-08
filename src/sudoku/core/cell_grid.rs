@@ -15,6 +15,22 @@ impl CellGrid{
             grid: cell_grid
         };
     }
+
+    pub fn from_seed(initial_values: &[[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> Self {
+        let cell_grid = grid_from_raw_values(&initial_values);
+
+        return Self {
+            grid: cell_grid
+        };
+    }
+}
+
+fn grid_from_raw_values(initial_values: &[[Option<u8>; 9]; 9]) -> GridOfReferences {
+    return core::array::from_fn(|i| row_from_raw_values(&initial_values[i]));
+}
+
+fn row_from_raw_values(initial_values: &[Option<u8>; 9]) -> RowOfReferences {
+    return core::array::from_fn(|i| Rc::new(RefCell::new(Cell::from_value(initial_values[i]))))
 }
 
 fn empty_grid() -> GridOfReferences {
@@ -22,7 +38,7 @@ fn empty_grid() -> GridOfReferences {
 }
 
 fn empty_row_array() -> RowOfReferences {
-    return core::array::from_fn(|_i| Rc::new(RefCell::new(Cell::new())));
+    return core::array::from_fn(|_i: usize| Rc::new(RefCell::new(Cell::default())));
 }
 
 // allow index syntax on the cell grid itself
