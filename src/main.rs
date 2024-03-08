@@ -1,7 +1,7 @@
 mod hello_world;
 mod sudoku;
 use std::{cell::RefCell, rc::Rc};
-use sudoku::domain::{cell::Cell, cell_grid::CellGrid, game::Game, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
+use sudoku::core::{cell::Cell, cell_grid::CellGrid, game::Game, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::GameStateValidator};
 
 fn main() {
     hello_world::greeter::say_hello();

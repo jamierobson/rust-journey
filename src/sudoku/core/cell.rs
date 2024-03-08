@@ -5,7 +5,7 @@ pub struct Cell {
     pub value: Option<u8>,
     pub candidates: Vec<u8>,
     pub discounted_values: Vec<u8>,
-    potentially_valid_values: Vec<u8> //todo: just exploring if you can have private members
+    potentially_valid_values: Vec<u8>
 }
 
 impl Cell {

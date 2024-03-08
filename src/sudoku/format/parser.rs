@@ -4,7 +4,7 @@
 
 use regex::Regex;
 
-use crate::sudoku::domain::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION};
+use crate::sudoku::core::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION};
 
 const NINE_X_NINE_CELL_REGEX: &str = "^[1-9.]{81}$";
 
@@ -60,7 +60,7 @@ fn values_from_input(input: &str) -> [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIM
 mod tests {
     use std::{clone};
 
-    use crate::sudoku::domain::consts::{self, PUZZLE_MAXIMUM_VALUE, PUZZLE_TOTAL_CELL_COUNT};
+    use crate::sudoku::core::consts::{self, PUZZLE_MAXIMUM_VALUE, PUZZLE_TOTAL_CELL_COUNT};
     use super::*;
 
     fn repeat_value_times(repeat_this: &str, times: usize) -> String {
