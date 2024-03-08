@@ -10,12 +10,17 @@ pub struct Cell {
 
 impl Cell {
     pub fn new() -> Self {
-        return Self {
-            value: None, 
-            candidates: Vec::new(),
-            discounted_values: Vec::new(),
-            potentially_valid_values: (0..=consts::PUZZLE_MAXIMUM_VALUE).collect()
+        Self::default()
+    }
+
+    pub fn from_value(value: Option<u8>) -> Self {
+        let mut cell = Cell::new();
+
+        if let Some(value) = value {
+            cell.set_value(value);
         }
+
+        return cell;
     }
 
     pub fn set_value(&mut self, value: u8) {

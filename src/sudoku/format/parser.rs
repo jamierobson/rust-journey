@@ -4,7 +4,7 @@
 
 use regex::Regex;
 
-use crate::sudoku::domain::cell_grid::CellGrid;
+use crate::sudoku::domain::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION};
 
 const NINE_X_NINE_CELL_REGEX: &str = "^[1-9.]{81}$";
 
@@ -29,15 +29,38 @@ impl Parser {
             return Err("The input {input} wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}");
         }
 
-        let mut cell_grid = CellGrid::new();
+        let values = values_from_input(&input);
+        let cell_grid = CellGrid::from_seed(&values);
 
         return Ok(cell_grid);
     }
 }
 
+fn values_from_input(input: &str) -> [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] {
+    let mut grid = [[None; PUZZLE_DIMENTION]; PUZZLE_DIMENTION];
+    
+    for (index, c) in input.chars().enumerate() {
+        let row = index / PUZZLE_DIMENTION;
+        let column = index % PUZZLE_DIMENTION;
+        
+        match c {
+            '.' => grid[row][column] = None,
+            _ => {
+                if let Some(value) = c.to_digit(10).map(|digit| digit as u8) {
+                    grid[row][column] = Some(value as u8);
+                }
+            }
+        }
+    }
+    
+    return grid;
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::sudoku::domain::consts::{self, PUZZLE_TOTAL_CELL_COUNT};
+    use std::{clone};
+
+    use crate::sudoku::domain::consts::{self, PUZZLE_MAXIMUM_VALUE, PUZZLE_TOTAL_CELL_COUNT};
     use super::*;
 
     fn repeat_value_times(repeat_this: &str, times: usize) -> String {
@@ -100,4 +123,45 @@ mod tests {
         assert!(cell_grid_result.is_ok());
         cell_grid_result.unwrap().grid.iter().flat_map(|x| x.iter()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
     }
+
+    #[test]
+    fn to_grid_returns_value_from_string() {
+        let parser = Parser::new();
+
+        let expected: u8 = 1;
+        let mut string_representation = expected.to_string().as_str().to_owned();
+        string_representation.push_str(&repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT-1));
+
+        let cell_grid_result = parser.to_grid(&string_representation);
+        
+        assert!(cell_grid_result.is_ok());
+        let found_value = cell_grid_result.unwrap().grid[0][0].borrow().value;
+        assert!(found_value.is_some());
+        assert_eq!(found_value.unwrap(), expected)
+    }
+
+    #[test]
+    fn to_grid_returns_filled_in_grid() {
+        let parser = Parser::new();
+
+        let string_representation = repeat_value_times("123456789", PUZZLE_DIMENTION);
+        
+        let row: [Option<u8>; PUZZLE_DIMENTION] = (1..=PUZZLE_MAXIMUM_VALUE).map(|value| Some(value)).collect::<Vec<_>>().try_into().unwrap();
+        let expected_values: [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] = core::array::from_fn(|_i| row.clone());
+
+        let cell_grid_result = parser.to_grid(&string_representation);
+        assert!(cell_grid_result.is_ok());
+
+        let cell_grid = cell_grid_result.unwrap();
+
+        for row in 0..PUZZLE_DIMENTION {
+        for column in 0..PUZZLE_DIMENTION {
+            let actual = cell_grid[row][column].borrow().value;
+            assert!(actual.is_some());
+            let expected = expected_values[row][column].expect("there should be a value here according to the test setup");
+            
+            assert_eq!(expected, actual.unwrap());
+        }}
+    }
+
 }
