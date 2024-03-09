@@ -1,5 +1,5 @@
 use std::{cell::RefCell, ops::{Index, IndexMut}, rc::Rc};
-use super::{cell::Cell, consts::PUZZLE_DIMENTION};
+use super::{cell::Cell, consts::PUZZLE_DIMENTION, game::{SeedGrid, SeedRow}};
 
 pub type RowOfReferences = [Rc<RefCell<Cell>>; PUZZLE_DIMENTION];
 pub type GridOfReferences = [RowOfReferences; PUZZLE_DIMENTION];
@@ -16,7 +16,7 @@ impl CellGrid{
         };
     }
 
-    pub fn from_seed(initial_values: &[[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION]) -> Self {
+    pub fn from_seed(initial_values: &SeedGrid) -> Self {
         let cell_grid = grid_from_raw_values(&initial_values);
 
         return Self {
@@ -25,11 +25,11 @@ impl CellGrid{
     }
 }
 
-fn grid_from_raw_values(initial_values: &[[Option<u8>; 9]; 9]) -> GridOfReferences {
+fn grid_from_raw_values(initial_values: &SeedGrid) -> GridOfReferences {
     return core::array::from_fn(|i| row_from_raw_values(&initial_values[i]));
 }
 
-fn row_from_raw_values(initial_values: &[Option<u8>; 9]) -> RowOfReferences {
+fn row_from_raw_values(initial_values: &SeedRow) -> RowOfReferences {
     return core::array::from_fn(|i| Rc::new(RefCell::new(Cell::from_value(initial_values[i]))))
 }
 
@@ -38,7 +38,7 @@ fn empty_grid() -> GridOfReferences {
 }
 
 fn empty_row_array() -> RowOfReferences {
-    return core::array::from_fn(|_i: usize| Rc::new(RefCell::new(Cell::default())));
+    return core::array::from_fn(|_i: usize| Rc::new(RefCell::new(Cell::new())));
 }
 
 // allow index syntax on the cell grid itself
