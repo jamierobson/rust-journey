@@ -1,4 +1,4 @@
-use std::{rc::Rc};
+use std::rc::Rc;
 
 use crate::pretty::aliases::*;
 
@@ -72,20 +72,20 @@ fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &Gri
     let cells  = cell_grid[row_range_lower_index .. row_range_upper_index]
     .iterate()
     .flat_map(|row| row[column_range_lower_index .. column_range_upper_index].iterate())
-    .map(|c| Rc::downgrade(&c))
+    .map(|c| c.clone())
     .collect();
 
     return CellGroup::new(cells);
 }
 
 fn get_row(row_number: usize, cell_grid: &GridOfReferences) -> CellGroup {
-    let cells = cell_grid[row_number].iterate().map(|c| Rc::downgrade(&c)).collect();
+    let cells = cell_grid[row_number].iterate().map(|cell| cell.clone()).collect();
     return CellGroup::new(cells);
 }
 
 fn get_column(column_number: usize, cell_grid: &GridOfReferences) -> CellGroup {
 
-    let cells = cell_grid.iterate().map(|row| Rc::downgrade(&row[column_number])).collect();
+    let cells = cell_grid.iterate().map(|row| row[column_number].clone()).collect();
     return CellGroup::new(cells);
 }
 

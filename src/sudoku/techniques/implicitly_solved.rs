@@ -30,9 +30,9 @@ fn try_complete_all_cells(game: &mut Game){
 
 fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>){
     for group in collection {
-        let living_cell_reference_iterator = group.cells.iterate().filter_map(|weak| weak.upgrade());
-        let used_values: Vector<u8> = living_cell_reference_iterator.clone().filter_map(|rc| rc.borrow().value).collect();
-        living_cell_reference_iterator.for_each(|rc| rc.borrow_mut().discount_values(&used_values));
+        
+        let used_values: Vector<u8> = group.cells.iterate().filter_map(|rc| rc.borrow().value).collect();
+        group.cells.iterate().for_each(|rc| rc.borrow_mut().discount_values(&used_values));
     }
 }
 

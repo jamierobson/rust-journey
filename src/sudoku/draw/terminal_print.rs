@@ -1,24 +1,18 @@
-use crate::pretty::aliases::*;
-use std::{cell::RefCell, rc::Rc};
+use crate::{pretty::aliases::*, sudoku::core::cell_grid::RowOfReferences};
 
-use crate::sudoku::core::{cell::Cell, cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::CellGroup};
+use crate::sudoku::core::{cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::CellGroup};
 
 
 
 pub fn draw_all_rows(rows: &Vector<CellGroup>) {
     print!("\n OK Drawing the rows now, the Weak<Refcell<Cell>>\n");
 
-    for game_row in rows {
-        let row: [Rc<RefCell<Cell>>; PUZZLE_DIMENTION] = 
-            (0..PUZZLE_DIMENTION)
-            .map(|i| {
-                game_row.cells[i].upgrade().unwrap()
-            })
-            .collect::<Vector<_>>()
-            .try_into()
-            .unwrap();
-            
-            draw_row(&row);
+    for row in rows {
+        let drawable_row_result = row.cells.clone().try_into();
+        match drawable_row_result {
+            Ok(_) => draw_row(&drawable_row_result.expect("object is in Ok arm of match")),
+            Err(_) => (),
+        }
     };
 }
 
@@ -38,11 +32,11 @@ pub fn draw_all_cells(cell_grid: &CellGrid){
     }
 }
 
-fn draw_row(row: &[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]) {
+fn draw_row(row: &RowOfReferences) {
     print!("{}\n", create_row_line(row));
 }
 
-fn create_row_line(row: &[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]) -> String {
+fn create_row_line(row: &RowOfReferences) -> String {
 
     let mut row_line_display: String = "|".to_owned();
 
