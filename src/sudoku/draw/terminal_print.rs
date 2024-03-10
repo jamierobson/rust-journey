@@ -9,16 +9,16 @@ pub fn draw_all_rows(rows: &Vector<CellGroup>) {
 
     for row in rows {
         let drawable_row_result = row.cells.clone().try_into();
-        match drawable_row_result {
-            Ok(_) => draw_row(&drawable_row_result.expect("object is in Ok arm of match")),
-            Err(_) => (),
+        
+        if let Ok(_) = drawable_row_result { 
+            draw_row(&drawable_row_result.expect("object is in Ok arm of match"));
         }
-    };
+    }
 }
 
 pub fn draw_all_cells(cell_grid: &CellGrid){
 
-    print!("Ok let's try drawing the whole grid! \n");
+    println!("Ok let's try drawing the whole grid!");
 
     let separator_line_length = create_row_line(&cell_grid[0]).len();
 
@@ -33,7 +33,7 @@ pub fn draw_all_cells(cell_grid: &CellGrid){
 }
 
 fn draw_row(row: &RowOfReferences) {
-    print!("{}\n", create_row_line(row));
+    println!("{}", create_row_line(row));
 }
 
 fn create_row_line(row: &RowOfReferences) -> String {
@@ -65,5 +65,5 @@ fn value_or_letter_x(value: &Option<u8>) -> String {
 }
 
 fn draw_separator_line(length: usize) {
-    print!("{} \n", "_".repeat(length));
+    println!("{}", "_".repeat(length));
 }

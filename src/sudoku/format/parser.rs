@@ -5,7 +5,7 @@
 use crate::pretty::aliases::*;
 use regex::Regex;
 
-use crate::sudoku::core::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
+use crate::sudoku::core::{consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
 
 const NINE_X_NINE_CELL_REGEX: &str = "^[1-9.]{81}$";
 
@@ -30,7 +30,7 @@ impl Parser {
             return Err(format!("The input '{input}' wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}"));
         }
 
-        let values = values_from_input(&input);
+        let values = values_from_input(input);
         return Ok(Game::new(&values));
     }
 }
@@ -46,7 +46,7 @@ fn values_from_input(input: &str) -> SeedGrid {
             '.' => grid[row][column] = None,
             _ => {
                 if let Some(value) = c.to_digit(10).map(|digit| digit as u8) {
-                    grid[row][column] = Some(value as u8);
+                    grid[row][column] = Some(value);
                 }
             }
         }

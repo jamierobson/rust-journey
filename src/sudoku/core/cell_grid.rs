@@ -12,25 +12,25 @@ pub struct CellGrid {
 impl CellGrid{
     pub fn new() -> Self {
         let cell_grid = empty_grid();
-        return Self {
+        Self {
             grid: cell_grid
-        };
+        }
     }
 
     pub fn from_seed(initial_values: &SeedGrid) -> Self {
         let cell_grid = grid_from_raw_values(&initial_values);
 
-        return Self {
+        Self {
             grid: cell_grid
-        };
+        }
     }
 }
 
 fn grid_from_raw_values(initial_values: &SeedGrid) -> GridOfReferences {
-    return core::array::from_fn(|i| row_from_raw_values(&initial_values[i]));
+    return core::array::from_fn(|i| row_from_raw_values(initial_values[i]));
 }
 
-fn row_from_raw_values(initial_values: &SeedRow) -> RowOfReferences {
+fn row_from_raw_values(initial_values: SeedRow) -> RowOfReferences {
     return core::array::from_fn(|i| Rc::new(RefCell::new(Cell::from_value(initial_values[i]))))
 }
 

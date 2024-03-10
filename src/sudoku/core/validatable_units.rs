@@ -17,7 +17,7 @@ pub struct UnitValidator {
 
 impl UnitValidator {
     pub fn new() -> Self{
-        return Self {}
+        Self {}
     }
 }
 
@@ -53,9 +53,9 @@ pub struct CellGroup {
 
 impl CellGroup {
     pub fn new(cells: Vector<Rc<RefCell<Cell>>>) -> Self {
-        return Self {
-            cells: cells
-        };
+        Self {
+            cells
+        }
     }
 }
 
