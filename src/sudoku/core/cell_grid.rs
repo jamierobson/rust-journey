@@ -1,3 +1,4 @@
+use crate::pretty::aliases::*;
 use std::{cell::RefCell, ops::{Index, IndexMut}, rc::Rc};
 use super::{cell::Cell, consts::PUZZLE_DIMENTION, game::{SeedGrid, SeedRow}};
 
@@ -66,8 +67,8 @@ mod tests {
 
             let any_cells_have_value = 
                 cell_grid.grid
-                .iter()
-                .flat_map(|row| row.iter())
+                .iterate()
+                .flat_map(|row| row.iterate())
                 .any(|rc| rc.borrow().value.is_some());
 
 

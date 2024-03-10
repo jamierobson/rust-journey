@@ -1,3 +1,4 @@
+use crate::pretty::aliases::*;
 use crate::sudoku::core::{consts::PUZZLE_TOTAL_CELL_COUNT, game::Game, validatable_units::CellGroup};
 
 pub fn set_solved_cells(game: &mut Game) {
@@ -23,14 +24,14 @@ fn try_complete_all_cells(game: &mut Game){
     eliminate_options_from_groups(&mut game.rows);
     eliminate_options_from_groups(&mut game.columns);
     eliminate_options_from_groups(&mut game.blocks);
-    game.cell_grid.grid.iter().flatten().for_each(|rc| rc.borrow_mut().try_complete())
+    game.cell_grid.grid.iterate().flatten().for_each(|rc| rc.borrow_mut().try_complete())
 }
 
 
-fn eliminate_options_from_groups(collection: &mut Vec<CellGroup>){
+fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>){
     for group in collection {
-        let living_cell_reference_iterator = group.cells.iter().filter_map(|weak| weak.upgrade());
-        let used_values: Vec<u8> = living_cell_reference_iterator.clone().filter_map(|rc| rc.borrow().value).collect();
+        let living_cell_reference_iterator = group.cells.iterate().filter_map(|weak| weak.upgrade());
+        let used_values: Vector<u8> = living_cell_reference_iterator.clone().filter_map(|rc| rc.borrow().value).collect();
         living_cell_reference_iterator.for_each(|rc| rc.borrow_mut().discount_values(&used_values));
     }
 }

@@ -1,3 +1,4 @@
+use crate::pretty::aliases::*;
 use std::{cell::RefCell, rc::Weak};
 use super::cell::Cell;
 
@@ -23,15 +24,15 @@ impl UnitValidator {
 impl CellGroupValidator for UnitValidator {
     fn is_valid(&self, cell_group: &CellGroup) -> bool {
 
-        let all_cell_values: Vec<u8> = 
+        let all_cell_values: Vector<u8> = 
             cell_group
             .cells
-            .iter()
+            .iterate()
             .filter_map(|weak| weak.upgrade())
             .filter_map(|rc| rc.borrow().value)
             .collect();
 
-        let mut deduped: Vec<u8> = all_cell_values.to_vec();
+        let mut deduped: Vector<u8> = all_cell_values.to_vec();
         deduped.dedup();
 
         return all_cell_values.len() == deduped.len();
@@ -42,17 +43,17 @@ impl CellGroupValidator for UnitValidator {
         return self.is_valid(cell_group) &&
             cell_group
             .cells
-            .iter()
+            .iterate()
             .all(|weak| weak.upgrade().is_some_and(|rc| rc.borrow().value.is_some()));
 
     }
 }
 pub struct CellGroup {
-    pub cells: Vec<Weak<RefCell<Cell>>>
+    pub cells: Vector<Weak<RefCell<Cell>>>
 }
 
 impl CellGroup {
-    pub fn new(cells: Vec<Weak<RefCell<Cell>>>) -> Self {
+    pub fn new(cells: Vector<Weak<RefCell<Cell>>>) -> Self {
         return Self {
             cells: cells
         };
@@ -81,7 +82,7 @@ mod tests {
             cell_reference_from_value(None),
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let weak: Vector<Weak<RefCell<Cell>>> = cells.iterate().map(|cell| Rc::downgrade(&cell)).collect();
         let group = CellGroup::new(weak);
         let unit_validator = UnitValidator::new();
 
@@ -98,7 +99,7 @@ mod tests {
             cell_reference_from_value(Some(2))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let weak: Vector<Weak<RefCell<Cell>>> = cells.iterate().map(|cell| Rc::downgrade(&cell)).collect();
         let group = CellGroup::new(weak);
         let unit_validator = UnitValidator::new();
 
@@ -114,7 +115,7 @@ mod tests {
             cell_reference_from_value(Some(2))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let weak: Vector<Weak<RefCell<Cell>>> = cells.iterate().map(|cell| Rc::downgrade(&cell)).collect();
         let group = CellGroup::new(weak);
         let unit_validator = UnitValidator::new();
 
@@ -132,7 +133,7 @@ mod tests {
             cell_reference_from_value(Some(5)),
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let weak: Vector<Weak<RefCell<Cell>>> = cells.iterate().map(|cell| Rc::downgrade(&cell)).collect();
         let group = CellGroup::new(weak);
         let unit_validator = UnitValidator::new();
 
@@ -147,7 +148,7 @@ mod tests {
             cell_reference_from_value(Some(1))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
+        let weak: Vector<Weak<RefCell<Cell>>> = cells.iterate().map(|cell| Rc::downgrade(&cell)).collect();
         let group = CellGroup::new(weak);
         let unit_validator = UnitValidator::new();
 

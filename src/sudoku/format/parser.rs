@@ -2,6 +2,7 @@
 // The standard format is in the form [1-9.]{81}
 // I'm imagining that we eventually support other sizes, in which case we will cover that when we get there.
 
+use crate::pretty::aliases::*;
 use regex::Regex;
 
 use crate::sudoku::core::{cell_grid::CellGrid, consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
@@ -62,7 +63,7 @@ mod tests {
     use super::*;
 
     fn repeat_value_times(repeat_this: &str, times: usize) -> String {
-        let repeated_values:Vec<String> = std::iter::repeat(repeat_this.to_string()).take(times).collect();
+        let repeated_values:Vector<String> = std::iter::repeat(repeat_this.to_string()).take(times).collect();
         return repeated_values.join("");
     }
 
@@ -119,7 +120,7 @@ mod tests {
         let empty = repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT);
         let result = parser.new_game(&empty);
         assert!(result.is_ok());
-        result.unwrap().cell_grid.grid.iter().flat_map(|x| x.iter()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
+        result.unwrap().cell_grid.grid.iterate().flat_map(|x| x.iterate()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
     }
 
     #[test]
@@ -144,7 +145,7 @@ mod tests {
 
         let string_representation = repeat_value_times("123456789", PUZZLE_DIMENTION);
         
-        let row: [Option<u8>; PUZZLE_DIMENTION] = (1..=PUZZLE_MAXIMUM_VALUE).map(|value| Some(value)).collect::<Vec<_>>().try_into().unwrap();
+        let row: [Option<u8>; PUZZLE_DIMENTION] = (1..=PUZZLE_MAXIMUM_VALUE).map(|value| Some(value)).collect::<Vector<_>>().try_into().unwrap();
         let expected_values: [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] = core::array::from_fn(|_i| row.clone());
 
         let result = parser.new_game(&string_representation);

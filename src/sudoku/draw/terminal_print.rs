@@ -1,10 +1,11 @@
+use crate::pretty::aliases::*;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::sudoku::core::{cell::Cell, cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::CellGroup};
 
 
 
-pub fn draw_all_rows(rows: &Vec<CellGroup>) {
+pub fn draw_all_rows(rows: &Vector<CellGroup>) {
     print!("\n OK Drawing the rows now, the Weak<Refcell<Cell>>\n");
 
     for game_row in rows {
@@ -13,7 +14,7 @@ pub fn draw_all_rows(rows: &Vec<CellGroup>) {
             .map(|i| {
                 game_row.cells[i].upgrade().unwrap()
             })
-            .collect::<Vec<_>>()
+            .collect::<Vector<_>>()
             .try_into()
             .unwrap();
             
