@@ -1,6 +1,6 @@
 use crate::pretty::aliases::*;
 use std::{cell::RefCell, rc::Rc};
-use super::cell::Cell;
+use super::{cell::Cell, cell_grid::CellReference};
 
 pub trait GameStateValidator {
     fn is_valid(&self) -> bool;
@@ -48,11 +48,11 @@ impl CellGroupValidator for UnitValidator {
     }
 }
 pub struct CellGroup {
-    pub cells: Vector<Rc<RefCell<Cell>>>
+    pub cells: Vector<CellReference>
 }
 
 impl CellGroup {
-    pub fn new(cells: Vector<Rc<RefCell<Cell>>>) -> Self {
+    pub fn new(cells: Vector<CellReference>) -> Self {
         Self {
             cells
         }
@@ -64,7 +64,7 @@ mod tests {
     use std::rc::Rc;
     use super::*;
 
-    fn cell_reference_from_value(cell_value_option: Option<u8>) -> Rc<RefCell<Cell>> {
+    fn cell_reference_from_value(cell_value_option: Option<u8>) -> CellReference {
         
         let new_cell_ref = Rc::new(RefCell::new(Cell::new()));
         if let Some(value) = cell_value_option {

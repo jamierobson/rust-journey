@@ -2,7 +2,8 @@ use crate::pretty::aliases::*;
 use std::{cell::RefCell, ops::{Index, IndexMut}, rc::Rc};
 use super::{cell::Cell, consts::PUZZLE_DIMENTION, game::{SeedGrid, SeedRow}};
 
-pub type RowOfReferences = [Rc<RefCell<Cell>>; PUZZLE_DIMENTION];
+pub type CellReference = Rc<RefCell<Cell>>;
+pub type RowOfReferences = [CellReference; PUZZLE_DIMENTION];
 pub type GridOfReferences = [RowOfReferences; PUZZLE_DIMENTION];
 
 pub struct CellGrid {

@@ -1,3 +1,5 @@
+use std::{collections::btree_map::Range, ops::{RangeBounds, RangeInclusive}};
+
 use crate::pretty::aliases::*;
 use super::consts::PUZZLE_MAXIMUM_VALUE;
 
@@ -49,6 +51,10 @@ impl Cell {
         for &value in values.as_ref() {
             self.discount_value(value)
         }
+    }
+
+    pub fn discount_range(&mut self, range: impl Iterator<Item = u8>) {
+        self.discount_values(range.collect::<Vector<u8>>());
     }
 
     pub fn add_candidate(&mut self, value: u8) {
@@ -140,7 +146,7 @@ mod tests {
     fn try_complete_value_does_not_set_value_when_more_than_one_missing_value() {
 
         let mut cell = Cell::new();
-        cell.discount_values((3..=PUZZLE_MAXIMUM_VALUE).collect::<Vector<u8>>());
+        cell.discount_range(3..=PUZZLE_MAXIMUM_VALUE);
         assert!(cell.value.is_none());
     }
 
