@@ -57,7 +57,7 @@ The relationships between the grid, and the rows/columns/blocks has been a real 
 - Have the grid with a property `[[Cell; size]; size]`, and having the cell groups have some kind of shared `Rc<Cell>`, but this ended up failing, as I seemed to have to clone the existing cell - which kind of lost the point of trying to have other things reference it.
 - Include lifetimes all the way up to the Game type, even though this gets in the way of my ultimate goal of getting this compiled to wasm. I found, however, that I couldn't instantiate a cell grid, instantiate rows/columns/blocks with references to the grid `(error[E0515]: cannot return value referencing local data)`. I have a skill issue, somehow saying "but I don't want to own this any more, here you go, caller, it's yours". 
 
-So I ended up the place I really wanted to avoid, the `Rc<RefCell<Cell>>`. 
+So I ended up the place I really wanted to avoid, the `CellReference`. 
 
 At least now the rows/columns/blocks actually point at my cells now, and I can update the cell values as expected. Not best thrilled about it, but it's progress,
 
@@ -84,3 +84,37 @@ Now that this is out of the way, I decided to move on to getting valid games int
 
 ## Simple solves
 Now that we're fighting less against the syntax and the borrow checker, I'm able to start to be a touch more expressive, in creating a simple solve when there's 1 obvious candidate for a cell. I have a test that can solve at least one non-trivial but very easy puzzle!
+
+## Ownership and closures
+This is doing my head in. I want to use lambdas and be functional in my code, e.g. to get a grouping of cells by those with the same potential values
+
+```
+        cell_group.cells
+        .iter()
+        .filter_map(|weak| weak.upgrade())
+        .map(|rc| rc.clone())
+        .group_by(|rc| rc.clone().borrow().potentially_valid_values)
+        .into_iter()
+        .collect();
+```
+
+and I don't get the error
+`creates a temporary value which is freed while still in use`
+
+It feels like I should be expressing what I want here - I'm going to have to take an alternative and less idiomatic approach. It's not the first time, however, that I've run into issues using lambdas. They're doing my head in. Just please, read the values and then let it be done. 
+
+## My eyes
+I admit it, I don't really like short hand. I find it adds a mental load to reading the code, and I much prefer fully typed out words. I guess that's to be expected, I am coming from c#, after all. We all have autocomplete in our IDEs, so I don't think we need to pretend that it's really saving us any keystrokes. To that end, my two biggest bugbears are `Vec` and `iter()`, and I can thankfully report that I've been able to make these read, to my eyes at least, better, as `Vector` and `iterate()`. `&str` is another one that bothers me, but less egrigeous I guess becuase I understand it is a slice, and `String` is taken. `StringSlice`... I kind of prefer it to `&str`, but not enough to actually try do anything about that one.... yet.
+
+## And back to Rc<>
+So after playing around, something dawned on me. I had initially thought that the cell grid is the only thing to alter a cell, and for that reason it stood to reason that the validatable units were purely a view on the data. However in the solver, I'm applying logic across all cells in the group, and updating the cells - from the group - with inferences from other cells. E.g. a validatable unit is looking at all the used values in all of its cells, and then causing all other cells to eliminate that as an option.
+
+And then it dawned on me. The dreaded feeling.
+
+This _is_ shared ownership wiht interior mutability, and the `Rc<RefCell<Cell>>` is precisely the tool for the job. And to think, I fought _so_ hard against it. Oops! Well at least I learned about the `Weak` type, and the pattern of 
+```
+weak_references
+.iter()
+.filter_map(|weak| weak.upgrade())
+.continue_from_here(...)
+```

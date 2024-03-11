@@ -1,17 +1,20 @@
+use std::{collections::btree_map::Range, ops::{RangeBounds, RangeInclusive}};
+
+use crate::pretty::aliases::*;
 use super::consts::PUZZLE_MAXIMUM_VALUE;
 
 #[derive(Debug)]
 pub struct Cell {
     pub value: Option<u8>,
-    pub discounted_values: Vec<u8>,
-    potentially_valid_values: Vec<u8>
+    pub discounted_values: Vector<u8>,
+    pub potentially_valid_values: Vector<u8>
 }
 
 impl Cell {
     pub fn new() -> Self {
         Self {
             value: None,
-            discounted_values: Vec::new(),
+            discounted_values: Vector::new(),
             potentially_valid_values: (1..=PUZZLE_MAXIMUM_VALUE).collect()
         }
     }
@@ -50,6 +53,10 @@ impl Cell {
         }
     }
 
+    pub fn discount_range(&mut self, range: impl Iterator<Item = u8>) {
+        self.discount_values(range.collect::<Vector<u8>>());
+    }
+
     pub fn add_candidate(&mut self, value: u8) {
         if !is_valid_cell_value(value){
             return;
@@ -71,11 +78,11 @@ impl Default for Cell {
     }
 }
 
-fn remove_from_collection<T>(collection: &mut Vec<T>, value: T) where T: PartialEq {
+fn remove_from_collection<T>(collection: &mut Vector<T>, value: T) where T: PartialEq {
     collection.retain(|x| *x != value);
 }
 
-fn add_to_collection<T>(collection : &mut Vec<T>, value: T) where T: PartialEq {
+fn add_to_collection<T>(collection : &mut Vector<T>, value: T) where T: PartialEq {
     if!collection.contains(&value) {
         collection.push(value);
     }
@@ -126,7 +133,7 @@ mod tests {
 
         for expected in 1..=PUZZLE_MAXIMUM_VALUE {
             let mut cell = Cell::new();
-            let discounted_values: Vec<u8> = (1..=PUZZLE_MAXIMUM_VALUE).filter(|&x| x != expected).collect();
+            let discounted_values: Vector<u8> = (1..=PUZZLE_MAXIMUM_VALUE).filter(|&x| x != expected).collect();
             cell.discount_values(discounted_values);
             cell.try_complete();
 
@@ -139,7 +146,7 @@ mod tests {
     fn try_complete_value_does_not_set_value_when_more_than_one_missing_value() {
 
         let mut cell = Cell::new();
-        cell.discount_values((3..=PUZZLE_MAXIMUM_VALUE).collect::<Vec<u8>>());
+        cell.discount_range(3..=PUZZLE_MAXIMUM_VALUE);
         assert!(cell.value.is_none());
     }
 

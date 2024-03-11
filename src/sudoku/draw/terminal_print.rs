@@ -1,29 +1,24 @@
-use std::{cell::RefCell, rc::Rc};
+use crate::{pretty::aliases::*, sudoku::core::cell_grid::RowOfReferences};
 
-use crate::sudoku::core::{cell::Cell, cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::CellGroup};
+use crate::sudoku::core::{cell_grid::CellGrid, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::CellGroup};
 
 
 
-pub fn draw_all_rows(rows: &Vec<CellGroup>) {
+pub fn draw_all_rows(rows: &Vector<CellGroup>) {
     print!("\n OK Drawing the rows now, the Weak<Refcell<Cell>>\n");
 
-    for game_row in rows {
-        let row: [Rc<RefCell<Cell>>; PUZZLE_DIMENTION] = 
-            (0..PUZZLE_DIMENTION)
-            .map(|i| {
-                game_row.cells[i].upgrade().unwrap()
-            })
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-            
-            draw_row(&row);
-    };
+    for row in rows {
+        let drawable_row_result = row.cells.clone().try_into();
+        
+        if let Ok(_) = drawable_row_result { 
+            draw_row(&drawable_row_result.expect("object is in Ok arm of match"));
+        }
+    }
 }
 
 pub fn draw_all_cells(cell_grid: &CellGrid){
 
-    print!("Ok let's try drawing the whole grid! \n");
+    println!("Ok let's try drawing the whole grid!");
 
     let separator_line_length = create_row_line(&cell_grid[0]).len();
 
@@ -37,11 +32,11 @@ pub fn draw_all_cells(cell_grid: &CellGrid){
     }
 }
 
-fn draw_row(row: &[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]) {
-    print!("{}\n", create_row_line(row));
+fn draw_row(row: &RowOfReferences) {
+    println!("{}", create_row_line(row));
 }
 
-fn create_row_line(row: &[Rc<RefCell<Cell>>; PUZZLE_DIMENTION]) -> String {
+fn create_row_line(row: &RowOfReferences) -> String {
 
     let mut row_line_display: String = "|".to_owned();
 
@@ -70,5 +65,5 @@ fn value_or_letter_x(value: &Option<u8>) -> String {
 }
 
 fn draw_separator_line(length: usize) {
-    print!("{} \n", "_".repeat(length));
+    println!("{}", "_".repeat(length));
 }

@@ -1,7 +1,9 @@
+use crate::pretty::aliases::*;
 use std::{cell::RefCell, ops::{Index, IndexMut}, rc::Rc};
 use super::{cell::Cell, consts::PUZZLE_DIMENTION, game::{SeedGrid, SeedRow}};
 
-pub type RowOfReferences = [Rc<RefCell<Cell>>; PUZZLE_DIMENTION];
+pub type CellReference = Rc<RefCell<Cell>>;
+pub type RowOfReferences = [CellReference; PUZZLE_DIMENTION];
 pub type GridOfReferences = [RowOfReferences; PUZZLE_DIMENTION];
 
 pub struct CellGrid {
@@ -11,25 +13,25 @@ pub struct CellGrid {
 impl CellGrid{
     pub fn new() -> Self {
         let cell_grid = empty_grid();
-        return Self {
+        Self {
             grid: cell_grid
-        };
+        }
     }
 
     pub fn from_seed(initial_values: &SeedGrid) -> Self {
         let cell_grid = grid_from_raw_values(&initial_values);
 
-        return Self {
+        Self {
             grid: cell_grid
-        };
+        }
     }
 }
 
 fn grid_from_raw_values(initial_values: &SeedGrid) -> GridOfReferences {
-    return core::array::from_fn(|i| row_from_raw_values(&initial_values[i]));
+    return core::array::from_fn(|i| row_from_raw_values(initial_values[i]));
 }
 
-fn row_from_raw_values(initial_values: &SeedRow) -> RowOfReferences {
+fn row_from_raw_values(initial_values: SeedRow) -> RowOfReferences {
     return core::array::from_fn(|i| Rc::new(RefCell::new(Cell::from_value(initial_values[i]))))
 }
 
@@ -66,8 +68,8 @@ mod tests {
 
             let any_cells_have_value = 
                 cell_grid.grid
-                .iter()
-                .flat_map(|row| row.iter())
+                .iterate()
+                .flat_map(|row| row.iterate())
                 .any(|rc| rc.borrow().value.is_some());
 
 

@@ -1,5 +1,6 @@
-use std::{cell::RefCell, rc::Weak};
-use super::cell::Cell;
+use crate::pretty::aliases::*;
+use std::{cell::RefCell, rc::Rc};
+use super::{cell::Cell, cell_grid::CellReference};
 
 pub trait GameStateValidator {
     fn is_valid(&self) -> bool;
@@ -16,22 +17,21 @@ pub struct UnitValidator {
 
 impl UnitValidator {
     pub fn new() -> Self{
-        return Self {}
+        Self {}
     }
 }
 
 impl CellGroupValidator for UnitValidator {
     fn is_valid(&self, cell_group: &CellGroup) -> bool {
 
-        let all_cell_values: Vec<u8> = 
+        let all_cell_values: Vector<u8> = 
             cell_group
             .cells
-            .iter()
-            .filter_map(|weak| weak.upgrade())
+            .iterate()
             .filter_map(|rc| rc.borrow().value)
             .collect();
 
-        let mut deduped: Vec<u8> = all_cell_values.to_vec();
+        let mut deduped: Vector<u8> = all_cell_values.to_vec();
         deduped.dedup();
 
         return all_cell_values.len() == deduped.len();
@@ -42,20 +42,20 @@ impl CellGroupValidator for UnitValidator {
         return self.is_valid(cell_group) &&
             cell_group
             .cells
-            .iter()
-            .all(|weak| weak.upgrade().is_some_and(|rc| rc.borrow().value.is_some()));
+            .iterate()
+            .all(|rc| rc.borrow().value.is_some());
 
     }
 }
 pub struct CellGroup {
-    pub cells: Vec<Weak<RefCell<Cell>>>
+    pub cells: Vector<CellReference>
 }
 
 impl CellGroup {
-    pub fn new(cells: Vec<Weak<RefCell<Cell>>>) -> Self {
-        return Self {
-            cells: cells
-        };
+    pub fn new(cells: Vector<CellReference>) -> Self {
+        Self {
+            cells
+        }
     }
 }
 
@@ -64,7 +64,7 @@ mod tests {
     use std::rc::Rc;
     use super::*;
 
-    fn cell_reference_from_value(cell_value_option: Option<u8>) -> Rc<RefCell<Cell>> {
+    fn cell_reference_from_value(cell_value_option: Option<u8>) -> CellReference {
         
         let new_cell_ref = Rc::new(RefCell::new(Cell::new()));
         if let Some(value) = cell_value_option {
@@ -81,8 +81,7 @@ mod tests {
             cell_reference_from_value(None),
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
-        let group = CellGroup::new(weak);
+        let group = CellGroup::new(cells);
         let unit_validator = UnitValidator::new();
 
         assert_eq!(unit_validator.is_valid(&group), true);
@@ -98,8 +97,7 @@ mod tests {
             cell_reference_from_value(Some(2))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
-        let group = CellGroup::new(weak);
+        let group = CellGroup::new(cells);
         let unit_validator = UnitValidator::new();
 
         assert_eq!(unit_validator.is_valid(&group), true);
@@ -114,8 +112,7 @@ mod tests {
             cell_reference_from_value(Some(2))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
-        let group = CellGroup::new(weak);
+        let group = CellGroup::new(cells);
         let unit_validator = UnitValidator::new();
 
         assert_eq!(unit_validator.is_complete(&group), false);
@@ -132,8 +129,7 @@ mod tests {
             cell_reference_from_value(Some(5)),
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
-        let group = CellGroup::new(weak);
+        let group = CellGroup::new(cells);
         let unit_validator = UnitValidator::new();
 
         assert_eq!(unit_validator.is_complete(&group), true);
@@ -147,8 +143,7 @@ mod tests {
             cell_reference_from_value(Some(1))
         ];
 
-        let weak: Vec<Weak<RefCell<Cell>>> = cells.iter().map(|cell| Rc::downgrade(&cell)).collect();
-        let group = CellGroup::new(weak);
+        let group = CellGroup::new(cells);
         let unit_validator = UnitValidator::new();
 
         assert_eq!(unit_validator.is_valid(&group), false);

@@ -1,8 +1,9 @@
 mod hello_world;
 mod sudoku;
+mod pretty;
 use sudoku::core::game::Game;
 use sudoku::draw::terminal_print::{draw_all_rows, draw_all_cells};
-use sudoku::solver::simple;
+use sudoku::techniques::implicitly_solved;
 
 fn main() {
     hello_world::greeter::say_hello();
