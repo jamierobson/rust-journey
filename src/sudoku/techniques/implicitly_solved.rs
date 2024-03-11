@@ -38,7 +38,7 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>){
 
 #[cfg(test)]
 mod tests {
-    use crate::sudoku::{core::validatable_units::GameStateValidator, draw::terminal_print::{draw_all_cells, draw_all_rows}, format::parser::Parser};
+    use crate::sudoku::{core::validatable_units::GameStateValidator, draw::terminal_print::{draw_all_cells, draw_all_rows}, format::serializer::Serializer};
 
     use super::*;
 
@@ -46,7 +46,7 @@ mod tests {
     fn solves_single_missing_cell(){
 
         let trivial_puzzle = "534678912672195348198342567859761423426853791713924856961537284287419635345.86179";
-        let mut game = Parser::new().new_game(trivial_puzzle).expect("the test data should be correct");
+        let mut game = Serializer::new().new_game(trivial_puzzle).expect("the test data should be correct");
 
         assert!(!game.is_complete());
         assert!(game.cell_grid[8][3].borrow().value.is_none());
@@ -62,7 +62,7 @@ mod tests {
     fn solves_extremely_easy_with_40_spaces() {
 
         let puzzle = "5834.7.2...7...453.61.258...94.....5.5..63.14..68....7........8.3564..9..792385..";
-        let mut game: Game = Parser::new().new_game(puzzle).expect("the test data should be correct");
+        let mut game: Game = Serializer::new().new_game(puzzle).expect("the test data should be correct");
         draw_all_rows(&game.rows);
         set_solved_cells(&mut game);
         draw_all_rows(&game.rows);
@@ -74,7 +74,7 @@ mod tests {
     fn solves_very_easy_with_51_spaces() {
 
         let puzzle = "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79";
-        let mut game: Game = Parser::new().new_game(puzzle).expect("the test data should be correct");
+        let mut game: Game = Serializer::new().new_game(puzzle).expect("the test data should be correct");
         draw_all_rows(&game.rows);
         set_solved_cells(&mut game);
         draw_all_rows(&game.rows);
@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn fills_in_many_blanks_in_medium_puzzle_with_47_spaces() {
         let puzzle = "...97564...13..572.7....8....27....3..7..32..8..6.2..74.9....6.7..8..1.4286.34...";
-        let mut game: Game = Parser::new().new_game(puzzle).expect("the test data should be correct");
+        let mut game: Game = Serializer::new().new_game(puzzle).expect("the test data should be correct");
         draw_all_rows(&game.rows);
 
         let initial_cell_count = game.count_cells_with_value();

@@ -1,12 +1,31 @@
-use crate::{pretty::aliases::*, sudoku::core::cell_grid::CellReference};
+use crate::{pretty::aliases::*, sudoku::core::{cell_grid::CellReference, consts::PUZZLE_TOTAL_CELL_COUNT}};
 use std::collections::{hash_map, HashMap};
 
 use crate::sudoku::core::{cell::Cell, game::Game, validatable_units::CellGroup};
 
-pub fn eliminate_closed_candidate_groups(game: &mut Game) {
-    eliminate_options_from_groups(&mut game.rows);
-    eliminate_options_from_groups(&mut game.columns);
-    eliminate_options_from_groups(&mut game.blocks);
+pub fn eliminate_candidates_from_closed_groups(game: &mut Game) {
+    let mut i = 0;
+    loop {
+        i+=1;
+
+        let pre_iteration_completed_cell_count = game.count_cells_with_value();
+        eliminate_closed_candidate_groups(game);
+
+        if game.count_cells_with_value() == pre_iteration_completed_cell_count {
+            break;
+        }
+
+        if i >= PUZZLE_TOTAL_CELL_COUNT {
+            break;
+        }
+    }
+}
+
+fn eliminate_closed_candidate_groups(game: &mut Game) {
+
+    naive_eliminate_options_from_groups(&mut game.rows);
+    naive_eliminate_options_from_groups(&mut game.columns);
+    naive_eliminate_options_from_groups(&mut game.blocks);
 }
 
 fn key_from_potential_values(potentials: &CellReference) -> String {
@@ -18,7 +37,7 @@ fn key_from_potential_values(potentials: &CellReference) -> String {
 
 }
 
-fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
+fn naive_eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
 
     for cell_group in collection {
         
@@ -27,6 +46,9 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
         // Group cells by their potential values, so that we can identify if, for example, 
         // two cells both have the exact same 2 candidates, 
         // meaning that none other of the cells could have those
+        // Note that this is very naive, as it won't catch cases where
+        // we have three cells with, for example, 123, 123, 12 as potentials.
+        // These would form a closed group over 1,2,3.
         for cell_reference in &cell_group.cells {
             cell_reference.borrow_mut().potentially_valid_values.sort();
             let key = key_from_potential_values(cell_reference);
@@ -38,7 +60,15 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
             }
         }
 
-        println!("{:?}", hashmap);
+        for cells_grouped_by_potentials in hashmap {
+            if cells_grouped_by_potentials.1.len() == cells_grouped_by_potentials.1[0].borrow().potentially_valid_values.len() {
+                for cell in &cell_group.cells {
+                    if cell.borrow().potentially_valid_values != cells_grouped_by_potentials.1[0].borrow().potentially_valid_values {
+                        cell.borrow_mut().discount_values(&cells_grouped_by_potentials.1[0].borrow().potentially_valid_values)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -46,7 +76,7 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use crate::sudoku::core::{cell::Cell, cell_grid::CellReference, validatable_units::CellGroup};
+    use crate::sudoku::{core::{cell::Cell, cell_grid::CellReference, validatable_units::CellGroup}, draw::terminal_print::draw_all_rows, format::serializer::Serializer};
 
     use super::*;
 
@@ -61,7 +91,7 @@ mod tests {
     }
 
     #[test]
-    fn just_test_the_grouping_method() {
+    fn eliminate_candidates_when_groups_of_cells_identified() {
         let cell_a = cell_reference_from_value(None);
         let cell_b = cell_reference_from_value(None);
         let cell_c = cell_reference_from_value(None);
@@ -73,13 +103,29 @@ mod tests {
         cell_d.borrow_mut().discount_value(1);
         
         let references = vec![
-            cell_a,
-            cell_b,
-            cell_c,
-            cell_d
+            cell_a.clone(),
+            cell_b.clone(),
+            cell_c.clone(),
+            cell_d.clone()
         ];
 
         let group = CellGroup::new(references);
-        eliminate_options_from_groups(&mut vec![group]);
+        naive_eliminate_options_from_groups(&mut vec![group]);
+
+        assert_eq!(cell_c.clone().borrow().potentially_valid_values, vec![7])
+    }
+    
+    #[test]
+    fn try_solve_a_puzzle_that_could_not_be_immediately_implicitely_solved (){
+        let test_case = "328975641..13..572.7....839..27....3..7..32.68..6.2..74.9..73687..8..124286134795";
+        let mut game = Serializer::new().new_game(test_case).expect("test data is valid");
+        
+        let initial_cell_count = game.count_cells_with_value();
+        draw_all_rows(&game.rows);
+
+        eliminate_candidates_from_closed_groups(&mut game);
+        
+        draw_all_rows(&game.rows);
+        println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
     }
 }
