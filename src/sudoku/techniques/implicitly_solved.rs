@@ -11,10 +11,13 @@ pub fn set_solved_cells(game: &mut Game) {
         try_complete_all_cells(game);
 
         if game.count_cells_with_value() == pre_iteration_completed_cell_count {
+            println!("Finished filling in implicitely solved cells after {} iterations", i);
             break;
         }
 
-        if i >= PUZZLE_TOTAL_CELL_COUNT {
+        if i >= PUZZLE_TOTAL_CELL_COUNT * PUZZLE_TOTAL_CELL_COUNT {
+            println!("Gave up filling in implicitely solved cells after {} iterations", i);
+            // Should never happen, but ensure we terminate
             break;
         }
     }

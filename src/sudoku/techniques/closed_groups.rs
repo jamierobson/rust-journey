@@ -1,82 +1,136 @@
 use crate::{pretty::aliases::*, sudoku::core::{cell_grid::CellReference, consts::PUZZLE_TOTAL_CELL_COUNT}};
-use std::collections::{hash_map, HashMap};
+use std::{cell, collections::{hash_map, HashMap}};
 
 use crate::sudoku::core::{cell::Cell, game::Game, validatable_units::CellGroup};
 
+use super::implicitly_solved;
+
 pub fn eliminate_candidates_from_closed_groups(game: &mut Game) {
+
+    implicitly_solved::set_solved_cells(game);
+    game.cell_grid.grid.iter().flat_map(|group| group).for_each(|cell| cell.borrow_mut().potentially_valid_values.sort());
+
     let mut i = 0;
     loop {
         i+=1;
 
-        let pre_iteration_completed_cell_count = game.count_cells_with_value();
-        eliminate_closed_candidate_groups(game);
+        let any_eliminated = try_eliminate_closed_candidate_groups(game);
 
-        if game.count_cells_with_value() == pre_iteration_completed_cell_count {
+        if !any_eliminated {
+            //todo: Why do we abandon after the first iteration?
+            println!("Finished eliminating candidates from closed groups after {} iterations", i);
             break;
         }
 
-        if i >= PUZZLE_TOTAL_CELL_COUNT {
+        implicitly_solved::set_solved_cells(game);
+
+        if i >= PUZZLE_TOTAL_CELL_COUNT * PUZZLE_TOTAL_CELL_COUNT {
+            println!("Gave up eliminating candidates from closed groups after {} iterations", i);
+            // Should never happen, but ensure we terminate
             break;
         }
     }
 }
 
-fn eliminate_closed_candidate_groups(game: &mut Game) {
+fn try_eliminate_closed_candidate_groups(game: &mut Game) -> bool {
 
-    naive_eliminate_options_from_groups(&mut game.rows);
-    naive_eliminate_options_from_groups(&mut game.columns);
-    naive_eliminate_options_from_groups(&mut game.blocks);
+    return 
+    try_naive_eliminate_options_from_groups(&mut game.rows)
+    || try_naive_eliminate_options_from_groups(&mut game.columns)
+    || try_naive_eliminate_options_from_groups(&mut game.blocks);
 }
+
+fn try_naive_eliminate_options_from_groups(cell_group_vector: &mut Vector<CellGroup>) -> bool {
+
+    // Group cells by their potential values, so that we can identify if, for example, 
+    // two cells both have the exact same 2 candidates, 
+    // meaning that none other of the cells could have those
+
+    let mut any_eliminated = false;
+    
+    for cell_group in cell_group_vector {
+        
+        let mut dictionary : HashMap<String, Vector<CellReference>>= HashMap::new();
+        
+        let all_keys: Vector<_> = cell_group.cells.iter().filter(|cell| cell.borrow().value.is_none()).map(|cell| key_from_potential_values(&cell)).collect();
+        for key in all_keys.clone() {
+            dictionary.insert(key, vec![]);
+        }
+
+        for cell_reference in &cell_group.cells {
+            if cell_reference.borrow().value.is_some(){
+                continue;
+            }
+
+            all_keys.iter()
+            .filter(|key| cell_reference.borrow().potentially_valid_values.iter().all(|c| key.contains(&c.to_string())))
+            .for_each(|key| dictionary.get_mut(key).expect("we did just check that the key exists").push(cell_reference.clone()));
+        }
+
+        for dictionary_entry in dictionary {
+           
+            let values_to_discount = values_from_key(&dictionary_entry.0);
+            
+            if values_to_discount.len() != dictionary_entry.1.len() 
+            {
+                continue;
+            }
+
+            if cell_group.cells.len() == dictionary_entry.1.len() {
+                continue;
+            }
+
+            println!("cycle identified for key {}", &dictionary_entry.0);
+
+            for cell in cell_group.cells.iter() {
+
+                if cell.borrow().potentially_valid_values.iter().all(|c| dictionary_entry.0.contains(&c.to_string())) {
+                    continue;
+                }
+
+                any_eliminated = true;
+                cell.borrow_mut().discount_values(&values_to_discount);
+            }
+
+            // Cycle identified
+            // println!("cycle identified for key {}", dictionary_entry.0);
+            // Work out: Which cells to try to eliminate from
+            // Work out: Were any eliminated for any cells? If so, set any_eliminated to true
+
+        }
+
+    }
+
+    return any_eliminated;
+}
+
+const SEPARATOR: &str = "-";
 
 fn key_from_potential_values(potentials: &CellReference) -> String {
     return potentials.borrow().potentially_valid_values
     .iterate()
     .map(|value| value.to_string())
     .collect::<Vector<_>>()
-    .join("-");
-
+    .join(SEPARATOR);
 }
 
-fn naive_eliminate_options_from_groups(collection: &mut Vector<CellGroup>) {
-
-    for cell_group in collection {
-        
-        let mut hashmap : HashMap<String, Vector<CellReference>>= HashMap::new();
-
-        // Group cells by their potential values, so that we can identify if, for example, 
-        // two cells both have the exact same 2 candidates, 
-        // meaning that none other of the cells could have those
-        // Note that this is very naive, as it won't catch cases where
-        // we have three cells with, for example, 123, 123, 12 as potentials.
-        // These would form a closed group over 1,2,3.
-        for cell_reference in &cell_group.cells {
-            cell_reference.borrow_mut().potentially_valid_values.sort();
-            let key = key_from_potential_values(cell_reference);
-            
-            if let Some(cells) = hashmap.get_mut(&key) {
-                cells.push(cell_reference.clone());
-            } else {
-                hashmap.insert(key, vec![cell_reference.clone()]);
-            }
-        }
-
-        for cells_grouped_by_potentials in hashmap {
-            if cells_grouped_by_potentials.1.len() == cells_grouped_by_potentials.1[0].borrow().potentially_valid_values.len() {
-                for cell in &cell_group.cells {
-                    if cell.borrow().potentially_valid_values != cells_grouped_by_potentials.1[0].borrow().potentially_valid_values {
-                        cell.borrow_mut().discount_values(&cells_grouped_by_potentials.1[0].borrow().potentially_valid_values)
-                    }
-                }
-            }
-        }
+fn key_element_count(key: &String) -> usize {
+    if key.len() == 0 {
+        return 0;
     }
+
+    return key.matches(SEPARATOR).count() + 1;
+}
+
+fn values_from_key(key: &String) -> Vec<u8> {
+    return key.split(SEPARATOR).map(|s| s.parse::<u8>().expect("the key was constructed from values of this type")).collect();
 }
 
 #[cfg(test)]
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use crate::sudoku::{core::{cell::Cell, cell_grid::CellReference, validatable_units::CellGroup}, draw::terminal_print::draw_all_rows, format::serializer::Serializer};
+    use crate::sudoku::{core::{cell::Cell, cell_grid::CellReference, validatable_units::CellGroup}, draw::terminal_print::draw_all_rows, format::serializer::Serializer, techniques::implicitly_solved::set_solved_cells};
 
     use super::*;
 
@@ -110,8 +164,9 @@ mod tests {
         ];
 
         let group = CellGroup::new(references);
-        naive_eliminate_options_from_groups(&mut vec![group]);
+        let some_eliminated = try_naive_eliminate_options_from_groups(&mut vec![group]);
 
+        assert!(some_eliminated);
         assert_eq!(cell_c.clone().borrow().potentially_valid_values, vec![7])
     }
     
