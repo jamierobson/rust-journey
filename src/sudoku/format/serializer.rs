@@ -7,7 +7,7 @@ use regex::Regex;
 
 use crate::sudoku::core::{consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
 
-const NINE_X_NINE_CELL_REGEX: &str = "^[1-9.]{81}$";
+const NINE_X_NINE_CELL_REGEX: StringSlice = "^[1-9.]{81}$";
 
 pub struct Serializer {
     regex: Regex
@@ -20,11 +20,11 @@ impl Serializer {
         }
     }
 
-    pub fn can_parse(&self, input: &str) -> bool {
+    pub fn can_parse(&self, input: StringSlice) -> bool {
         return self.regex.is_match(input);
     }
 
-    pub fn new_game(&self, input: &str) -> Result<Game, String> {
+    pub fn new_game(&self, input: StringSlice) -> Result<Game, String> {
         
         if !self.can_parse(input) {
             return Err(format!("The input '{input}' wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}"));
@@ -52,7 +52,7 @@ impl Serializer {
     }
 }
 
-fn values_from_input(input: &str) -> SeedGrid {
+fn values_from_input(input: StringSlice) -> SeedGrid {
     let mut grid = [[None; PUZZLE_DIMENTION]; PUZZLE_DIMENTION];
     
     for (index, c) in input.chars().enumerate() {
@@ -79,7 +79,7 @@ mod tests {
     use crate::sudoku::{core::consts::{self, PUZZLE_MAXIMUM_VALUE, PUZZLE_TOTAL_CELL_COUNT}, format::serializer};
     use super::*;
 
-    fn repeat_value_times(repeat_this: &str, times: usize) -> String {
+    fn repeat_value_times(repeat_this: StringSlice, times: usize) -> String {
         let repeated_values:Vector<String> = std::iter::repeat(repeat_this.to_string()).take(times).collect();
         return repeated_values.join("");
     }

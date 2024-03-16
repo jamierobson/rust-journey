@@ -3,14 +3,11 @@ mod sudoku;
 mod pretty;
 use sudoku::core::game::Game;
 use sudoku::draw::terminal_print::{draw_all_rows, draw_all_cells};
-use sudoku::techniques::implicitly_solved;
 
 fn main() {
     hello_world::greeter::say_hello();
     let mut sudoku = Game::default();
     set_some_arbitrary_values(&mut sudoku);
-
-    draw_all_cells(&sudoku.cell_grid); //This draws as (y, x) because we index into rows first, then the column value from there
     draw_all_rows(&sudoku.rows);
 }
 

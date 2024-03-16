@@ -11,10 +11,13 @@ pub fn set_solved_cells(game: &mut Game) {
         try_complete_all_cells(game);
 
         if game.count_cells_with_value() == pre_iteration_completed_cell_count {
+            println!("Finished filling in implicitely solved cells after {} iterations", i);
             break;
         }
 
-        if i >= PUZZLE_TOTAL_CELL_COUNT {
+        if i >= PUZZLE_TOTAL_CELL_COUNT * PUZZLE_TOTAL_CELL_COUNT {
+            println!("Gave up filling in implicitely solved cells after {} iterations", i);
+            // Should never happen, but ensure we terminate
             break;
         }
     }
@@ -32,7 +35,7 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>){
     for group in collection {
         
         let used_values: Vector<u8> = group.cells.iterate().filter_map(|rc| rc.borrow().value).collect();
-        group.cells.iterate().for_each(|rc| rc.borrow_mut().discount_values(&used_values));
+        group.cells.iterate().for_each(|rc| {rc.borrow_mut().discount_values(&used_values);});
     }
 }
 
@@ -90,7 +93,7 @@ mod tests {
 
         let initial_cell_count = game.count_cells_with_value();
         set_solved_cells(&mut game);
-        draw_all_cells(&game.cell_grid);
+        draw_all_rows(&game.rows);
         assert!(game.count_cells_with_value() > initial_cell_count);
         println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
     }
