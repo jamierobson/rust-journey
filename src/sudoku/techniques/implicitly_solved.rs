@@ -35,7 +35,7 @@ fn eliminate_options_from_groups(collection: &mut Vector<CellGroup>){
     for group in collection {
         
         let used_values: Vector<u8> = group.cells.iterate().filter_map(|rc| rc.borrow().value).collect();
-        group.cells.iterate().for_each(|rc| rc.borrow_mut().discount_values(&used_values));
+        group.cells.iterate().for_each(|rc| {rc.borrow_mut().discount_values(&used_values);});
     }
 }
 
@@ -93,7 +93,7 @@ mod tests {
 
         let initial_cell_count = game.count_cells_with_value();
         set_solved_cells(&mut game);
-        draw_all_cells(&game.cell_grid);
+        draw_all_rows(&game.rows);
         assert!(game.count_cells_with_value() > initial_cell_count);
         println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
     }

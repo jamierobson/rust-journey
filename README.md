@@ -57,7 +57,7 @@ The relationships between the grid, and the rows/columns/blocks has been a real 
 - Have the grid with a property `[[Cell; size]; size]`, and having the cell groups have some kind of shared `Rc<Cell>`, but this ended up failing, as I seemed to have to clone the existing cell - which kind of lost the point of trying to have other things reference it.
 - Include lifetimes all the way up to the Game type, even though this gets in the way of my ultimate goal of getting this compiled to wasm. I found, however, that I couldn't instantiate a cell grid, instantiate rows/columns/blocks with references to the grid `(error[E0515]: cannot return value referencing local data)`. I have a skill issue, somehow saying "but I don't want to own this any more, here you go, caller, it's yours". 
 
-So I ended up the place I really wanted to avoid, the `CellReference`. 
+So I ended up the place I really wanted to avoid, the `Rc<RefCell<Cell>>`. 
 
 At least now the rows/columns/blocks actually point at my cells now, and I can update the cell values as expected. Not best thrilled about it, but it's progress,
 
@@ -104,7 +104,7 @@ and I don't get the error
 It feels like I should be expressing what I want here - I'm going to have to take an alternative and less idiomatic approach. It's not the first time, however, that I've run into issues using lambdas. They're doing my head in. Just please, read the values and then let it be done. 
 
 ## My eyes
-I admit it, I don't really like short hand. I find it adds a mental load to reading the code, and I much prefer fully typed out words. I guess that's to be expected, I am coming from c#, after all. We all have autocomplete in our IDEs, so I don't think we need to pretend that it's really saving us any keystrokes. To that end, my two biggest bugbears are `Vec` and `iter()`, and I can thankfully report that I've been able to make these read, to my eyes at least, better, as `Vector` and `iterate()`. `&str` is another one that bothers me, but less egrigeous I guess becuase I understand it is a slice, and `String` is taken. `StringSlice`... I kind of prefer it to `&str`, but not enough to actually try do anything about that one.... yet.
+I admit it, I don't really like short hand. I find it adds a mental load to reading the code, and I much prefer fully typed out words. I guess that's to be expected, I am coming from c#, after all. We all have autocomplete in our IDEs, so I don't think we need to pretend that it's really saving us any keystrokes. To that end, my two biggest bugbears are `Vec` and `iter()`, and I can thankfully report that I've been able to make these read, to my eyes at least, better, as `Vector` and `iterate()`. `&str` is another one that bothers me, but less egrigeous I guess becuase I understand it is a slice, and `String` is taken. `StringSlice`... I kind of prefer it to `&str` ~~but not enough to actually try do anything about that one.... yet.~~
 
 ## And back to Rc<>
 So after playing around, something dawned on me. I had initially thought that the cell grid is the only thing to alter a cell, and for that reason it stood to reason that the validatable units were purely a view on the data. However in the solver, I'm applying logic across all cells in the group, and updating the cells - from the group - with inferences from other cells. E.g. a validatable unit is looking at all the used values in all of its cells, and then causing all other cells to eliminate that as an option.
@@ -117,4 +117,49 @@ weak_references
 .iter()
 .filter_map(|weak| weak.upgrade())
 .continue_from_here(...)
+```
+
+## Conjugate groups
+The next step I looked at was to consider the "naked pairs" idea. I figured that I should like an implementation that can handle any group size, and so settled upon the idea of looking at each cell, identifying if its candidates are an inclusive subset of anothers, and building groupings in this way. To that end, the hashmap felt appropriate. One annoyance I experienced was:
+
+```
+           all_keys
+           .iterate()
+           .filter(|key| key.is_superset_of(&cell_reference.borrow().potentially_valid_values))
+           .for_each(|matched_key| {
+                let count = dictionary.get(matched_key).expect("We are iterating over the keys that seeded the HashMap");
+                dictionary.insert(&matched_key, count + 1);
+           });
+```
+
+`all_keys` originally wasn't de-duped. This is because I had thought to use `dictionary.keys()` - but this leads to an attempt to borrow the dictionary mutably to insert, while borrowing immutably in order to iterate. Oops. 
+
+Next up, I'd like to look at further techniques, to get as far as I can before "resorting" to a brute force approach. Currently I have a puzzle with 50 completed cells, and I need to look at it by hand and work out what is missing to solve that one. Exciting!
+
+The initial state of the puzzle: 
+```
+...97564...13..572.7....8....27....3..7..32..8..6.2..74.9....6.7..8..1.4286.34...
+| x | x | x || 9 | 7 | 5 || 6 | 4 | x |
+| x | x | 1 || 3 | x | x || 5 | 7 | 2 |
+| x | 7 | x || x | x | x || 8 | x | x |
+| x | x | 2 || 7 | x | x || x | x | 3 |
+| x | x | 7 || x | x | 3 || 2 | x | x |
+| 8 | x | x || 6 | x | 2 || x | x | 7 |
+| 4 | x | 9 || x | x | x || x | 6 | x |
+| 7 | x | x || 8 | x | x || 1 | x | 4 |
+| 2 | 8 | 6 || x | 3 | 4 || x | x | x |
+```
+
+is now at 
+```
+328975641..13..572.7....839..27....3..7..32.68..6.2..7419..73687..8..124286134795
+| 3 | 2 | 8 || 9 | 7 | 5 || 6 | 4 | 1 |
+| x | x | 1 || 3 | x | x || 5 | 7 | 2 |
+| x | 7 | x || x | x | x || 8 | 3 | 9 |
+| x | x | 2 || 7 | x | x || x | x | 3 |
+| x | x | 7 || x | x | 3 || 2 | x | 6 |
+| 8 | x | x || 6 | x | 2 || x | x | 7 |
+| 4 | 1 | 9 || x | x | 7 || 3 | 6 | 8 |
+| 7 | x | x || 8 | x | x || 1 | 2 | 4 |
+| 2 | 8 | 6 || 1 | 3 | 4 || 7 | 9 | 5 |
 ```

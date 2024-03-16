@@ -38,23 +38,30 @@ impl Cell {
         self.potentially_valid_values.clear();
     }
 
-    pub fn discount_value(&mut self, value: u8) {
+    pub fn discount_value(&mut self, value: u8) -> bool {
         if !is_valid_cell_value(value){
-            return;
+            return false;
         }
+
+        let was_removed = self.potentially_valid_values.contains(&value);
 
         add_to_collection(&mut self.discounted_values, value);
         remove_from_collection(&mut self.potentially_valid_values, value);
+
+        return was_removed;
     }
 
-    pub fn discount_values(&mut self, values: impl AsRef<[u8]>) {
+    pub fn discount_values(&mut self, values: impl AsRef<[u8]>) -> bool {
+        let mut any_removed = false;
         for &value in values.as_ref() {
-            self.discount_value(value)
+            any_removed = any_removed | self.discount_value(value);
         }
+
+        return any_removed;
     }
 
-    pub fn discount_range(&mut self, range: impl Iterator<Item = u8>) {
-        self.discount_values(range.collect::<Vector<u8>>());
+    pub fn discount_range(&mut self, range: impl Iterator<Item = u8>) -> bool {
+        return self.discount_values(range.collect::<Vector<u8>>());
     }
 
     pub fn add_candidate(&mut self, value: u8) {
