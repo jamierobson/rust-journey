@@ -2,7 +2,7 @@ use crate::pretty::aliases::*;
 use std::{cell::RefCell, rc::Rc};
 use super::{cell::Cell, cell_grid::CellReference};
 
-pub trait GameStateValidator {
+pub trait PuzzleValidator {
     fn is_valid(&self) -> bool;
     fn is_complete(&self) -> bool;
 }

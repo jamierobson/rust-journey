@@ -1,27 +1,27 @@
-use crate::{pretty::{aliases::*, iterable::*},  sudoku::core::{cell_grid::CellReference, consts::PUZZLE_TOTAL_CELL_COUNT}};
-use std::{cell, collections::{hash_map, HashMap}, ops::Add};
+use crate::{pretty::{aliases::*, iterable::*},  sudoku::{core::consts::PUZZLE_TOTAL_CELL_COUNT}};
+use std::collections::HashMap;
 
-use crate::sudoku::core::{cell::Cell, game::Game, validatable_units::CellGroup};
+use crate::sudoku::core::{puzzle::Puzzle, validatable_units::CellGroup};
 
-use super::implicitly_solved;
+use super::implicitly_solved::{self, solve_single_candidate_cells};
 
-pub fn eliminate_candidates_from_closed_groups(game: &mut Game) {
+pub fn solve_conjugate_groups(sudoku: &mut Puzzle) {
 
-    implicitly_solved::set_solved_cells(game);
-    game.cell_grid.grid.iterate().flat_map(|group| group).for_each(|cell| cell.borrow_mut().potentially_valid_values.sort());
+    solve_single_candidate_cells(sudoku);
+    sudoku.cell_grid.grid.iterate().flat_map(|group| group).for_each(|cell| cell.borrow_mut().potentially_valid_values.sort());
 
     let mut i = 0;
     loop {
         i+=1;
 
-        let any_eliminated = try_eliminate_closed_candidate_groups(game);
+        let any_eliminated = try_eliminate_closed_candidate_groups(sudoku);
 
         if !any_eliminated {
             println!("Finished eliminating candidates from closed groups after {} iterations", i);
             break;
         }
 
-        implicitly_solved::set_solved_cells(game);
+        implicitly_solved::solve_single_candidate_cells(sudoku);
 
         if i >= PUZZLE_TOTAL_CELL_COUNT * PUZZLE_TOTAL_CELL_COUNT {
             println!("Gave up eliminating candidates from closed groups after {} iterations", i);
@@ -31,12 +31,12 @@ pub fn eliminate_candidates_from_closed_groups(game: &mut Game) {
     }
 }
 
-fn try_eliminate_closed_candidate_groups(game: &mut Game) -> bool {
+fn try_eliminate_closed_candidate_groups(sudoku: &mut Puzzle) -> bool {
 
     return 
-    try_eliminate_options_from_groups(&mut game.rows)
-    || try_eliminate_options_from_groups(&mut game.columns)
-    || try_eliminate_options_from_groups(&mut game.blocks);
+    try_eliminate_options_from_groups(&mut sudoku.rows)
+    || try_eliminate_options_from_groups(&mut sudoku.columns)
+    || try_eliminate_options_from_groups(&mut sudoku.blocks);
 }
 
 fn try_eliminate_options_from_groups(cell_group_vector: &mut Vector<CellGroup>) -> bool {
@@ -101,7 +101,7 @@ fn try_eliminate_options_from_groups(cell_group_vector: &mut Vector<CellGroup>) 
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use crate::sudoku::{core::{cell::Cell, cell_grid::CellReference, validatable_units::{CellGroup, GameStateValidator}}, draw::terminal_print::draw_all_rows, format::serializer::Serializer, techniques::implicitly_solved::set_solved_cells};
+    use crate::sudoku::{core::{cell::Cell, cell_grid::CellReference, validatable_units::{CellGroup, PuzzleValidator}}, draw::terminal_print::draw_all_rows, format::serializer::Serializer, techniques::implicitly_solved::solve_single_candidate_cells};
 
     use super::*;
 
@@ -145,48 +145,47 @@ mod tests {
     #[test]
     fn try_solve_a_puzzle_with_only_single_iteration_of_closed_group_strategy (){
         let test_case = ".8..9..3..3.....699.2.63158.2.8.459.8519.7.463946.587.563.4.9872......15.1..5..2.";
-        let mut game = Serializer::new().new_game(test_case).expect("test data is valid");
+        let mut sudoku = Serializer::new().new_puzzle(test_case).expect("test data is valid");
         
-        let initial_cell_count = game.count_cells_with_value();
-        draw_all_rows(&game.rows);
+        let initial_cell_count = sudoku.count_cells_with_value();
+        draw_all_rows(&sudoku.rows);
 
-        eliminate_candidates_from_closed_groups(&mut game);
+        solve_conjugate_groups(&mut sudoku);
         
-        draw_all_rows(&game.rows);
-        println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
+        draw_all_rows(&sudoku.rows);
+        println!("before: {}, after: {}", initial_cell_count, sudoku.count_cells_with_value());
 
-        assert!(game.is_complete())
+        assert!(sudoku.is_complete())
     }
     
     #[test]
     fn try_solve_puzzle_with_multiple_iterations_of_closed_group_strategy (){
         let test_case = "251348796...9172.4..7256.......6.832.......7...8...9.....62...88..7.......25.164.";
-        let mut game = Serializer::new().new_game(test_case).expect("test data is valid");
+        let mut sudoku = Serializer::new().new_puzzle(test_case).expect("test data is valid");
         
-        let initial_cell_count = game.count_cells_with_value();
-        draw_all_rows(&game.rows);
+        let initial_cell_count = sudoku.count_cells_with_value();
+        draw_all_rows(&sudoku.rows);
 
-        eliminate_candidates_from_closed_groups(&mut game);
+        solve_conjugate_groups(&mut sudoku);
         
-        draw_all_rows(&game.rows);
-        println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
+        draw_all_rows(&sudoku.rows);
+        println!("before: {}, after: {}", initial_cell_count, sudoku.count_cells_with_value());
 
-        assert!(game.is_complete())
+        assert!(sudoku.is_complete())
     }
     
     #[test]
     fn try_solve_a_puzzle_that_could_not_be_immediately_implicitely_solved (){
         let test_case = "328975641..13..572.7....839..27....3..7..32.68..6.2..74.9..73687..8..124286134795";
-        let mut game = Serializer::new().new_game(test_case).expect("test data is valid");
+        let mut puzzle = Serializer::new().new_puzzle(test_case).expect("test data is valid");
         
-        let initial_cell_count = game.count_cells_with_value();
-        draw_all_rows(&game.rows);
+        let initial_cell_count = puzzle.count_cells_with_value();
+        draw_all_rows(&puzzle.rows);
 
-        eliminate_candidates_from_closed_groups(&mut game);
+        solve_conjugate_groups(&mut puzzle);
         
-        draw_all_rows(&game.rows);
-        println!("before: {}, after: {}", initial_cell_count, game.count_cells_with_value());
-        println!("{}", Serializer::new().serialize_to_string(&game));
-        assert!(game.count_cells_with_value() > initial_cell_count);
+        draw_all_rows(&puzzle.rows);
+        println!("before: {}, after: {}", initial_cell_count, puzzle.count_cells_with_value());
+        assert!(puzzle.count_cells_with_value() > initial_cell_count);
     }
 }
