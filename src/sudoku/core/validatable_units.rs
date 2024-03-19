@@ -1,5 +1,5 @@
 use crate::pretty::aliases::*;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::{self, RefCell}, rc::Rc};
 use super::{cell::Cell, cell_grid::CellReference};
 
 pub trait PuzzleValidator {
@@ -23,30 +23,39 @@ impl UnitValidator {
 
 impl CellGroupValidator for UnitValidator {
     fn is_valid(&self, cell_group: &CellGroup) -> bool {
-
-        let all_cell_values: Vector<u8> = 
-            cell_group
-            .cells
-            .iterate()
-            .filter_map(|rc| rc.borrow().value)
-            .collect();
-
-        let mut deduped: Vector<u8> = all_cell_values.to_vec();
-        deduped.dedup();
-
-        return all_cell_values.len() == deduped.len();
-
+        all_cells_have_unique_values(cell_group) && all_cells_still_have_candidates(cell_group)
     }
 
     fn is_complete(&self, cell_group: &CellGroup) -> bool {
-        return self.is_valid(cell_group) &&
-            cell_group
-            .cells
-            .iterate()
-            .all(|rc| rc.borrow().value.is_some());
-
+        all_cells_have_unique_values(cell_group) && all_cells_are_filled_in(cell_group)
     }
 }
+
+fn all_cells_are_filled_in(cell_group: &CellGroup) -> bool{
+    cell_group
+    .cells
+    .iterate()
+    .all(|rc| rc.borrow().value.is_some())
+}
+
+fn all_cells_have_unique_values(cell_group: &CellGroup) -> bool{
+    let all_cell_values: Vector<u8> = 
+        cell_group
+        .cells
+        .iterate()
+        .filter_map(|rc| rc.borrow().value)
+        .collect();
+
+    let mut deduped: Vector<u8> = all_cell_values.to_vec();
+    deduped.dedup();
+
+    return all_cell_values.len() == deduped.len();
+}
+
+fn all_cells_still_have_candidates(cell_group: &CellGroup) -> bool{
+    cell_group.cells.iterate().all(|cell| cell.borrow().value.is_some() || cell.borrow().potentially_valid_values.len() != 0)
+}
+
 pub struct CellGroup {
     pub cells: Vector<CellReference>
 }
