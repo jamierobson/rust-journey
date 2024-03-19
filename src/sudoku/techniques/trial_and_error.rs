@@ -49,25 +49,9 @@ pub fn solve_by_trial_and_error(sudoku: &mut Puzzle) {
             return;
         }
 
-        _ = try_recursively(sudoku, &mut i);
-
-
-
-        // i+=1;
-
-        // let mut cloned = sudoku.clone();
-        // let mut trial_value = 0;
-        // let mut trial_cell: Option<CellReference> = None;
-
-        // {
-        //     let candidates = next_trial(&mut cloned);
-        //     trial_value = candidates.1;
-        //     trial_cell = Some(candidates.0);
-        // }
-
-        // if !try_solve(&mut cloned, &trial_cell.as_mut().unwrap(), trial_value, &mut i) {
-        //     trial_cell.as_mut().unwrap().borrow_mut().discount_value(trial_value);
-        // }
+        if try_recursively(sudoku, &mut i){
+            return;
+        }
 
         if i >= PUZZLE_TOTAL_CELL_COUNT * PUZZLE_DIMENTION {
             println!("Gave up trial and error attempt after {} attempts", i);
@@ -77,40 +61,25 @@ pub fn solve_by_trial_and_error(sudoku: &mut Puzzle) {
     }
 }
 
-// fn next_trial(sudoku: &Puzzle) -> (CellReference, u8) {
-//     // todo: This should become a result type, rather than panicing
-//     let trial_cell = sudoku.cell_grid.grid.iterate().flatten().filter(|cell| cell.borrow().value.is_none()).nth(0).unwrap();
-
-//     // I want to understand the error that appears without this binding line
-//     // "temporary value is freed at the end of this statement". 
-//     let binding = trial_cell.borrow();
-//     let trial_value = binding.potentially_valid_values.iterate().nth(0).unwrap();
-
-//     return (trial_cell.clone(), *trial_value);
-// }
-
 fn try_get_next_trial(sudoku: &Puzzle, cloned_sudoku: &Puzzle) -> Option<Trial> {
-    // Todo: Make this an option type. If there's nothing left, then 
     let original_cell = sudoku.cell_grid.grid.iterate().flatten().filter(|cell| cell.borrow().value.is_none()).nth(0);
     let trial_cell = cloned_sudoku.cell_grid.grid.iterate().flatten().filter(|cell| cell.borrow().value.is_none()).nth(0);
 
     // we assume that original_cell and trial_cell are the same - todo: verify
-    if(original_cell.is_none()){
+    if original_cell.is_none() {
         return None;
     }
 
     // I want to understand the error that appears without this binding line
     // "temporary value is freed at the end of this statement". 
     let binding = trial_cell.unwrap().borrow();
-    let trial_value = binding.potentially_valid_values.iterate().nth(0).unwrap();
+    let trial_value = *binding.potentially_valid_values.iterate().nth(0).unwrap();
 
     return Some(Trial {
         original_cell: Rc::clone(original_cell.unwrap()),
         trial_cell: Rc::clone(trial_cell.unwrap()),
-        trial_value: *trial_value
+        trial_value: trial_value
     });
-
-    // return (trial_cell.clone(), *trial_value);
 }
 
 fn try_recursively(sudoku: &mut Puzzle, iterations: &mut usize) -> bool {
@@ -138,45 +107,19 @@ fn try_recursively(sudoku: &mut Puzzle, iterations: &mut usize) -> bool {
         return false;
     }
 
-    // trial.reject();
-    return try_recursively(&mut clone, iterations);
+    let success =  try_recursively(&mut clone, iterations);
+    
+    match success {
+        true => trial.accept(),
+        false => trial.reject()
+    }
 
-
+    return success;
 }
-
-// fn try_solve(sudoku: &mut Puzzle, trial_cell: &CellReference, trial_value: u8, i: &mut usize) -> bool {
-//     *i+=1;
-
-//     trial_cell.borrow_mut().set_value(trial_value);
-//     solve_conjugate_groups(sudoku);
-//     if sudoku.is_complete() {
-//         return true;
-//     }
-
-//     if !sudoku.is_valid() {
-//         return false;
-//     }
-
-//     if sudoku.cell_grid.grid.iterate().flatten().any(|x| x.borrow().potentially_valid_values.len() == 0) {
-//         return false;
-//     }
-
-//     let mut cloned = sudoku.clone();
-//     let mut next_trial_value = 0;
-//     let mut next_trial_cell: Option<CellReference> = None;
-
-//     {
-//         let candidates = next_trial(&mut cloned);
-//         next_trial_value = candidates.1;
-//         next_trial_cell = Some(candidates.0);
-//     }
-
-//     try_solve(&mut cloned, next_trial_cell.as_mut().unwrap(), next_trial_value, i)
-// }
 
 #[cfg(test)]
 mod tests {
-    use crate::sudoku::{self, draw::terminal_print::draw_all_rows};
+    use crate::sudoku::{draw::terminal_print::draw_all_rows};
 
     use super::*;
 
