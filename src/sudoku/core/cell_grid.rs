@@ -19,9 +19,23 @@ impl CellGrid{
     }
 
     pub fn from_seed(initial_values: &SeedGrid) -> Self {
+
         let cell_grid = grid_from_raw_values(&initial_values);
 
         Self {
+            grid: cell_grid
+        }
+    }
+}
+
+impl Clone for CellGrid {
+    fn clone(&self) -> Self {
+
+        let cell_grid: GridOfReferences = core::array::from_fn(|i| {
+            core::array::from_fn(|j| Rc::new(RefCell::new(Cell::from_value(self.grid[i][j].borrow().value.clone()))))
+        });
+
+        Self{
             grid: cell_grid
         }
     }
@@ -60,20 +74,40 @@ impl IndexMut<usize> for CellGrid{
 
 #[cfg(test)]
 mod tests {
-        use super::*;
+    use super::*;
 
-        #[test]
-        fn cell_grid_initialized_with_all_empty_cells() {
-            let cell_grid = CellGrid::new();
+    #[test]
+    fn cell_grid_initialized_with_all_empty_cells() {
+        let cell_grid = CellGrid::new();
 
-            let any_cells_have_value = 
-                cell_grid.grid
-                .iterate()
-                .flat_map(|row| row.iterate())
-                .any(|rc| rc.borrow().value.is_some());
+        let any_cells_have_value = 
+            cell_grid.grid
+            .iterate()
+            .flat_map(|row| row.iterate())
+            .any(|rc| rc.borrow().value.is_some());
 
 
-            assert_eq!(any_cells_have_value, false);
-        }
+        assert_eq!(any_cells_have_value, false);
+    }
+
+    #[test]
+    fn clone_performs_value_clone_on_cells() {
+
+        let row = 6;
+        let column = 4;
+        let initial_value = 2;
+        let updated_value = 3;
+
+        let mut grid = CellGrid::new();
+        grid[row][column].borrow_mut().set_value(initial_value);
+
+        let clone = grid.clone();
+        assert_eq!(clone[row][column].borrow().value.unwrap_or_default(), initial_value);
+        assert_eq!(grid[row][column].borrow().value, clone[row][column].borrow().value);
+
+        clone[row][column].borrow_mut().set_value(updated_value);
+        assert_eq!(grid[row][column].borrow().value.unwrap_or_default(), initial_value);
+        assert_eq!(clone[row][column].borrow().value.unwrap_or_default(), updated_value);
+    }
 
 }

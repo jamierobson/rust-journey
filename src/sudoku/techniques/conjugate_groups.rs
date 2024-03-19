@@ -176,7 +176,7 @@ mod tests {
     
     #[test]
     fn try_solve_a_puzzle_that_could_not_be_immediately_implicitely_solved (){
-        let test_case = "328975641..13..572.7....839..27....3..7..32.68..6.2..74.9..73687..8..124286134795";
+        let test_case = "...97564...13..572.7....8....27....3..7..32..8..6.2..74.9....6.7..8..1.4286.34...";
         let mut puzzle = Serializer::new().new_puzzle(test_case).expect("test data is valid");
         
         let initial_cell_count = puzzle.count_cells_with_value();

@@ -60,6 +60,28 @@ impl Puzzle {
     }
 }
 
+impl Clone for Puzzle {
+    fn clone(&self) -> Self {
+        let cloned_cell_grid = self.cell_grid.clone();
+        let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cloned_cell_grid.grid)).collect();
+        let columns = (0..PUZZLE_DIMENTION).map(|i| get_column(i, &cloned_cell_grid.grid)).collect();
+        let mut blocks = Vector::<CellGroup>::new();
+
+        for x in 0 .. PUZZLE_BLOCK_HEIGHT {
+        for y in 0 .. PUZZLE_BLOCK_WIDTH {
+            blocks.push(get_block(x, y, &cloned_cell_grid.grid));
+        }}
+        
+        Self {
+            cell_grid: cloned_cell_grid,
+            rows,
+            columns,
+            blocks,
+            unit_validator: UnitValidator::new()
+        }
+    }
+}
+
 fn get_block(block_row_number: usize, block_column_number:usize, cell_grid: &GridOfReferences) -> CellGroup {
 
     let row_range_lower_index = block_row_number * PUZZLE_BLOCK_HEIGHT;
