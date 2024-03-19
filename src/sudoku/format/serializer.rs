@@ -5,7 +5,7 @@
 use crate::{pretty::aliases::*, sudoku::core::consts::PUZZLE_TOTAL_CELL_COUNT};
 use regex::Regex;
 
-use crate::sudoku::core::{consts::PUZZLE_DIMENTION, game::{Game, SeedGrid}};
+use crate::sudoku::core::{consts::PUZZLE_DIMENTION, puzzle::{Puzzle, SeedGrid}};
 
 const NINE_X_NINE_CELL_REGEX: StringSlice = "^[1-9.]{81}$";
 
@@ -24,23 +24,22 @@ impl Serializer {
         return self.regex.is_match(input);
     }
 
-    pub fn new_game(&self, input: StringSlice) -> Result<Game, String> {
+    pub fn new_puzzle(&self, input: StringSlice) -> Result<Puzzle, String> {
         
         if !self.can_parse(input) {
-            return Err(format!("The input '{input}' wasn't understood as notation for a sudoku game. Expected a string matching {NINE_X_NINE_CELL_REGEX}"));
+            return Err(format!("The input '{input}' wasn't understood as notation for a sudoku puzzle. Expected a string matching {NINE_X_NINE_CELL_REGEX}"));
         }
 
         let values = values_from_input(input);
-        return Ok(Game::new(&values));
+        return Ok(Puzzle::new(&values));
     }
 
-    pub fn serialize_to_string(&self, game: &Game) -> String {
+    pub fn serialize(&self, sudoku: &Puzzle) -> String {
         let mut serialized = String::with_capacity(PUZZLE_TOTAL_CELL_COUNT);
         for row in 0..PUZZLE_DIMENTION {
         for column in 0..PUZZLE_DIMENTION {
-            // let value = game.cell_grid[row][column].borrow().value;
     
-            let push = match game.cell_grid[row][column].borrow().value {
+            let push = match sudoku.cell_grid[row][column].borrow().value {
                 Some(cell_value) => cell_value.to_string(),
                 None => ".".to_string(),
             };
@@ -129,8 +128,8 @@ mod tests {
         ];
 
         for expected in test_cases {
-            let game = serializer.new_game(&expected).expect("test data is confirmed correct");
-            let actual = serializer.serialize_to_string(&game);
+            let sudoku = serializer.new_puzzle(&expected).expect("test data is confirmed correct");
+            let actual = serializer.serialize(&sudoku);
 
             assert_eq!(actual, expected);
         }
@@ -146,7 +145,7 @@ mod tests {
     #[test]
     fn to_grid_returns_err_when_invalid_input() {
         let serializer = Serializer::new();
-        let cell_grid_result = serializer.new_game("invalid");
+        let cell_grid_result = serializer.new_puzzle("invalid");
         assert!(cell_grid_result.is_err());
     }
 
@@ -154,7 +153,7 @@ mod tests {
     fn to_grid_returns_empty_grid_when_all_periods() {
         let serializer = Serializer::new();
         let empty = repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT);
-        let result = serializer.new_game(&empty);
+        let result = serializer.new_puzzle(&empty);
         assert!(result.is_ok());
         result.unwrap().cell_grid.grid.iterate().flat_map(|x| x.iterate()).for_each(|cell_ref| assert_eq!(cell_ref.borrow().value, None))
     }
@@ -167,7 +166,7 @@ mod tests {
         let mut string_representation = expected.to_string().as_str().to_owned();
         string_representation.push_str(&repeat_value_times(".", PUZZLE_TOTAL_CELL_COUNT-1));
 
-        let result = serializer.new_game(&string_representation);
+        let result = serializer.new_puzzle(&string_representation);
         
         assert!(result.is_ok());
         let found_value = result.unwrap().cell_grid.grid[0][0].borrow().value;
@@ -184,14 +183,14 @@ mod tests {
         let row: [Option<u8>; PUZZLE_DIMENTION] = (1..=PUZZLE_MAXIMUM_VALUE).map(|value| Some(value)).collect::<Vector<_>>().try_into().unwrap();
         let expected_values: [[Option<u8>; PUZZLE_DIMENTION]; PUZZLE_DIMENTION] = core::array::from_fn(|_i| row.clone());
 
-        let result = serializer.new_game(&string_representation);
+        let result = serializer.new_puzzle(&string_representation);
         assert!(result.is_ok());
 
-        let game = result.unwrap();
+        let sudoku = result.unwrap();
 
         for row in 0..PUZZLE_DIMENTION {
         for column in 0..PUZZLE_DIMENTION {
-            let actual = game.cell_grid[row][column].borrow().value;
+            let actual = sudoku.cell_grid[row][column].borrow().value;
             assert!(actual.is_some());
             let expected = expected_values[row][column].expect("there should be a value here according to the test setup");
             

@@ -1,11 +1,11 @@
 use crate::pretty::aliases::*;
 
-use super::{cell_grid::{CellGrid, GridOfReferences}, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::{CellGroup, CellGroupValidator, GameStateValidator, UnitValidator}};
+use super::{cell_grid::{CellGrid, GridOfReferences}, consts::{PUZZLE_BLOCK_HEIGHT, PUZZLE_BLOCK_WIDTH, PUZZLE_DIMENTION}, validatable_units::{CellGroup, CellGroupValidator, PuzzleValidator, UnitValidator}};
 
 pub type SeedRow = [Option<u8>; PUZZLE_DIMENTION];
 pub type SeedGrid = [SeedRow; PUZZLE_DIMENTION];
 
-pub struct Game {
+pub struct Puzzle {
     pub cell_grid: CellGrid,
     pub rows: Vector<CellGroup>,
     pub columns: Vector<CellGroup>,
@@ -13,7 +13,7 @@ pub struct Game {
     unit_validator: UnitValidator,
 }
 
-impl Game {
+impl Puzzle {
     pub fn default() -> Self {
         let cell_grid =  CellGrid::new();
         let rows = (0..PUZZLE_DIMENTION).map(|i| get_row(i, &cell_grid.grid)).collect();
@@ -87,7 +87,7 @@ fn get_column(column_number: usize, cell_grid: &GridOfReferences) -> CellGroup {
     return CellGroup::new(cells);
 }
 
-impl GameStateValidator for Game {
+impl PuzzleValidator for Puzzle {
     fn is_valid(&self) -> bool {
             return self.rows.iterate().all(|r| self.unit_validator.is_valid(r))
             && self.columns.iterate().all(|r| self.unit_validator.is_valid(r))
