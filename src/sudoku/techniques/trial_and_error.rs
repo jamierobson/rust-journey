@@ -49,7 +49,7 @@ pub fn solve_by_trial_and_error(sudoku: &mut Puzzle) {
             return;
         }
 
-        if try_recursively(sudoku, &mut i){
+        if try_recursively(sudoku, None, &mut i){
             return;
         }
 
@@ -82,13 +82,21 @@ fn try_get_next_trial(sudoku: &Puzzle, cloned_sudoku: &Puzzle) -> Option<Trial> 
     });
 }
 
-fn try_recursively(sudoku: &mut Puzzle, iterations: &mut usize) -> bool {
+fn try_recursively(sudoku: &mut Puzzle, last_trial: Option<&Trial>, iterations: &mut usize) -> bool {
     *iterations += 1;
     let mut clone = sudoku.clone();
 
     let trial = try_get_next_trial(&sudoku, &clone);
 
     if trial.is_none() {
+
+        if let Some(last) = last_trial {
+            match sudoku.is_valid() {
+                true => {last.accept()},
+                false => {last.reject()}
+            }
+        }
+
         return sudoku.is_valid();
     }
 
@@ -107,7 +115,7 @@ fn try_recursively(sudoku: &mut Puzzle, iterations: &mut usize) -> bool {
         return false;
     }
 
-    let success =  try_recursively(&mut clone, iterations);
+    let success =  try_recursively(&mut clone, Some(&trial), iterations);
     
     match success {
         true => trial.accept(),
